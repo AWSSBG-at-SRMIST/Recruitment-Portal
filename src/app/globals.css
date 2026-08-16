@@ -1,0 +1,271 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-primary-light: var(--brand-primary-light);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-slate: var(--brand-slate);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  /* Dark violet/magenta palette — matches Official-Website (public/logo.png derived) */
+  --color-on-tertiary-container: #2e2138;
+  --color-on-primary-container: #f4f2f8;
+  --color-surface-container: #1c1426;
+  --color-surface-variant: #241a30;
+  --color-tertiary-container: #3d3450;
+  --color-on-tertiary: #ffffff;
+  --color-inverse-primary: #6b21a8;
+  --color-secondary-container: #d946ef;
+  --color-on-secondary-container: #2e2138;
+  --color-on-primary: #ffffff;
+  --color-tertiary-fixed-dim: #3d3450;
+  --color-on-tertiary-fixed: #f4f2f8;
+  --color-on-tertiary-fixed-variant: #b4aec2;
+  --color-tertiary: #b4aec2;
+  --color-surface-container-low: #120d1e;
+  --color-on-surface: #f4f2f8;
+  --color-error-container: #93000a;
+  --color-surface-bright: #2e2138;
+  --color-tertiary-fixed: #3d3450;
+  --color-secondary-fixed-dim: #a855f7;
+  --color-inverse-surface: #f4f2f8;
+  --color-surface-container-high: #241a30;
+  --color-on-secondary: #ffffff;
+  --color-secondary-fixed: #d946ef;
+  --color-surface-dim: #0a0613;
+  --color-on-error-container: #ffdad6;
+  --color-outline: #3d3450;
+  --color-on-secondary-fixed-variant: #d946ef;
+  --color-primary-container: #a855f7;
+  --color-surface-container-lowest: #120d1e;
+  --color-primary-fixed: #a855f7;
+  --color-surface-tint: #a855f7;
+  --color-on-surface-variant: #b4aec2;
+  --color-background-custom: #0a0613;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-on-primary-fixed-variant: #ffffff;
+  --color-surface: #0a0613;
+  --color-on-primary-fixed: #ffffff;
+  --color-outline-variant: #2a2236;
+  --color-inverse-on-surface: #0a0613;
+  --color-on-secondary-fixed: #ffffff;
+  --color-on-background: #f4f2f8;
+  --color-surface-container-highest: #2e2138;
+  --color-primary-fixed-dim: #6b21a8;
+
+  --spacing-container-max: 1280px;
+  --spacing-margin-mobile: 20px;
+  --spacing-margin-desktop: 32px;
+  --spacing-stack-md: 24px;
+  --spacing-gutter: 24px;
+  --spacing-stack-lg: 48px;
+  --spacing-stack-sm: 12px;
+  --spacing-unit: 8px;
+
+  --font-headline-md: var(--font-space-grotesk), sans-serif;
+  --font-label-sm: var(--font-geist), sans-serif;
+  --font-body-md: var(--font-geist), sans-serif;
+  --font-headline-lg-mobile: var(--font-space-grotesk), sans-serif;
+  --font-display: var(--font-space-grotesk), sans-serif;
+  --font-body-lg: var(--font-geist), sans-serif;
+  --font-label-md: var(--font-geist), sans-serif;
+  --font-headline-lg: var(--font-space-grotesk), sans-serif;
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.21 0.006 285.885);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.21 0.006 285.885);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: #a855f7;
+  --primary-foreground: #ffffff;
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.274 0.006 286.033);
+  --muted-foreground: oklch(0.705 0.015 286.067);
+  --accent: oklch(0.274 0.006 286.033);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: #a855f7;
+  --brand-primary: #A855F7;
+  --brand-primary-light: #D946EF;
+  --brand-dark: #050208;
+  --brand-slate: #A1A1AA;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html, body {
+    background: transparent;
+    color: var(--foreground);
+  }
+  body {
+    @apply bg-background text-foreground;
+    overflow-x: hidden;
+    font-family: var(--font-body-md);
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
+}
+
+/* Brutalist scrollbar: sharp corners, thick bar, violet-to-fuchsia thumb */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-primary) var(--brand-dark);
+}
+
+::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--brand-dark);
+  border-left: 2px solid color-mix(in oklab, var(--brand-slate) 25%, transparent);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--brand-primary), var(--brand-primary-light));
+  border: 2px solid var(--brand-dark);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--brand-primary-light), var(--brand-primary));
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--brand-dark);
+}
+
+@utility text-headline-md {
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+@utility text-label-sm {
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+@utility text-body-md {
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+@utility text-headline-lg-mobile {
+  font-size: 32px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+@utility text-display {
+  font-size: 64px;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+}
+@utility text-body-lg {
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+@utility text-label-md {
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+@utility text-headline-lg {
+  font-size: 40px;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+@utility card-shadow {
+  box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.4), 0px 4px 16px rgba(168, 85, 247, 0.08);
+}
+
+@utility glass {
+  backdrop-filter: blur(12px);
+  background-color: rgba(18, 13, 30, 0.7);
+}
+
+body {
+  cursor: url('/cursors/default.png') 0 0, auto;
+}
+
+/* Custom hand cursor on anything clickable — covers links, buttons, Radix
+   Select triggers/options, checkboxes/radios, and the .cursor-pointer
+   utility used for non-semantic clickable cards. */
+a, button, label, select, .cursor-pointer,
+[role="button"], [role="option"], [role="combobox"], [role="menuitem"], [role="tab"],
+input[type="checkbox"], input[type="radio"], input[type="submit"], input[type="button"] {
+  cursor: url('/cursors/pointer.png') 5 0, pointer;
+}
+
+/* Text inputs keep the native text-beam cursor — the global custom cursor
+   above would otherwise cascade in and make text fields feel unclickable. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]),
+textarea {
+  cursor: text;
+}
+
+/* Chrome/Safari paint autofilled fields with an opaque white/yellow
+   background no matter what CSS background-color says — the only way to
+   override it is this giant inset box-shadow trick, plus forcing the text
+   color so autofilled text stays legible on the dark theme. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--color-surface-container-lowest) inset !important;
+  box-shadow: 0 0 0 1000px var(--color-surface-container-lowest) inset !important;
+  -webkit-text-fill-color: var(--color-on-surface) !important;
+  caret-color: var(--color-on-surface);
+  transition: background-color 9999s ease-in-out 0s, color 9999s ease-in-out 0s;
+}
