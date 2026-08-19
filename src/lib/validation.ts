@@ -58,6 +58,10 @@ export function isLinkedInUrl(url: string): boolean {
   return /^https?:\/\/(www\.)?linkedin\.com\/.+/i.test(url.trim());
 }
 
+export function isGithubUrl(url: string): boolean {
+  return /^https?:\/\/(www\.)?github\.com\/.+/i.test(url.trim());
+}
+
 // Accept whatever an applicant pastes — bare handle, @handle, or a full
 // profile URL — and reduce it to the plain username the APIs expect.
 export function normalizeUsername(raw: string | null | undefined): string | null {

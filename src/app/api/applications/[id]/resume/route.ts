@@ -5,8 +5,8 @@ import { canViewApplication } from "@/lib/permissions";
 
 // Streams a candidate's resume PDF — recruiter-only, and only for a
 // recruiter with visibility into this application's domain/subdomain. The
-// file lives on local disk now (or S3 once STORAGE_BACKEND=aws); either way
-// it's fetched through the repo layer so it's never publicly addressable.
+// file lives in S3, fetched through the repo layer so it's never publicly
+// addressable.
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -74,7 +74,7 @@ export interface VerifiedSignals {
 export const YEAR_OPTIONS = ["1st Year", "2nd Year"] as const;
 export type Year = (typeof YEAR_OPTIONS)[number];
 
-export const DEPARTMENT_OPTIONS = ["CSE Core / C-Tech", "CSE (CINTEL)", "CSE (NWC)", "CSE (DSBS)"] as const;
+export const DEPARTMENT_OPTIONS = ["CSE C.Tech", "CSE CINTEL", "CSE DSBS", "CSE NWC"] as const;
 export type Department = (typeof DEPARTMENT_OPTIONS)[number];
 
 export const GENDER_OPTIONS = ["Male", "Female"] as const;

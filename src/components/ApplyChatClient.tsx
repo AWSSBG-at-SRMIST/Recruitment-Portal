@@ -79,7 +79,7 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
   const [domain, setDomain] = useState<Domain | "">("");
   const [subdomain, setSubdomain] = useState<Subdomain | "">("");
   const [linkedin, setLinkedin] = useState("");
-  const [githubUsername, setGithubUsername] = useState("");
+  const [githubLink, setGithubLink] = useState("");
   const [portfolioUrl, setPortfolioUrl] = useState("");
   const [awsCertLink1, setAwsCertLink1] = useState("");
   const [awsCertLink2, setAwsCertLink2] = useState("");
@@ -158,19 +158,18 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
     setSubdomain("");
   }
 
-  const githubRequired = domain === "Technical";
   const identityValid =
     !!name.trim() &&
     !!regNo.trim() &&
     !!gender &&
     !!year &&
     !!degree &&
-    !!phone.trim() &&
+    phone.trim().length === 10 &&
     !!personalEmail.trim() &&
     !!domain &&
     !!subdomain &&
     !!linkedin.trim() &&
-    (!githubRequired || !!githubUsername.trim());
+    !!githubLink.trim();
   const canSubmit = identityValid && readyToSubmit && !!resume && !submitting;
 
   async function submitApplication() {
@@ -188,7 +187,7 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
       form.set("domain", domain);
       form.set("subdomain", subdomain);
       form.set("linkedin", linkedin.trim());
-      if (githubUsername.trim()) form.set("githubUsername", githubUsername.trim());
+      form.set("githubUsername", githubLink.trim());
       if (portfolioUrl.trim()) form.set("portfolioUrl", portfolioUrl.trim());
       [awsCertLink1, awsCertLink2, awsCertLink3].forEach((l, i) => {
         if (l.trim()) form.set(`awsCertLink${i + 1}`, l.trim());
@@ -316,7 +315,20 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
                 Phone
                 <Req />
               </Label>
-              <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9876543210" />
+              <div className="flex h-10 items-stretch border-2 border-on-surface/10 bg-surface-container-lowest focus-within:border-primary">
+                <span className="flex items-center border-r-2 border-on-surface/10 px-3 text-sm font-bold text-on-surface-variant">
+                  +91
+                </span>
+                <input
+                  id="phone"
+                  type="tel"
+                  inputMode="numeric"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                  placeholder="9876543210"
+                  className="w-full min-w-0 bg-transparent px-3 text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none"
+                />
+              </div>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="personalEmail">
@@ -398,14 +410,14 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="github">
-                GitHub Username
-                {githubRequired && <Req />}
+                GitHub Link
+                <Req />
               </Label>
               <Input
                 id="github"
-                value={githubUsername}
-                onChange={(e) => setGithubUsername(e.target.value)}
-                placeholder={githubRequired ? "required for Technical" : "optional"}
+                value={githubLink}
+                onChange={(e) => setGithubLink(e.target.value)}
+                placeholder="https://github.com/yourusername"
               />
             </div>
             <div className="space-y-1.5">

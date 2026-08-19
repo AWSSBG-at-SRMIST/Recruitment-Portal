@@ -6,23 +6,23 @@ import type { Domain, Subdomain } from "@/types";
 
 export const SUBDOMAIN_RUBRICS: Record<Subdomain, string> = {
   "Software Development":
-    "Weigh hands-on building ability: shipped projects, ownership, breadth/depth of stack, and (from verified GitHub signals) whether they actually push code. Penalise resume claims not backed by public activity.",
+    "Weigh hands-on building ability from their project and skills answers — real ownership and a concrete stack, not tutorial-following. The domain-work answer should show genuine engagement with building, not just familiarity. Cross-check any coding claims with verified GitHub signals; penalise resume/GitHub mismatches. Internship proof, if given, is a strong signal.",
   "AI & Machine Learning":
-    "Weigh real ML project experience (data → model → result), framework fluency (PyTorch/TF/sklearn), and problem-solving depth. Use verified GitHub/LeetCode signals to gauge coding ability. Reward candidates who understand tradeoffs, not just tool names.",
+    "Weigh real ML project experience (data → model → result) and framework fluency (PyTorch/TF/sklearn) from their project and skills answers. Use verified GitHub/LeetCode signals to gauge coding ability. Reward candidates who explain tradeoffs, not just tool names.",
   "Cloud & DevOps":
-    "Weigh hands-on infra exposure: cloud services, containers, CI/CD, Linux, automation. Reward practical deployment/ops experience over certifications alone. Cross-check any coding claims with GitHub signals.",
+    "Weigh hands-on infra exposure — the domain-work answer should name specific AWS/cloud services, containers, CI/CD, or Linux work, not generic buzzwords. Reward practical deployment/ops experience and internship proof over certifications alone. Cross-check any coding claims with GitHub signals.",
   "Events & Operations":
-    "Weigh organisational ability, calm under pressure, and prior event/volunteer experience. The venue-cancellation answer reveals prioritisation and delegation — reward concrete, actionable plans over vague enthusiasm.",
+    "Weigh organisational ability and calm-under-pressure signals in their experience answer — concrete event/volunteer roles beat vague enthusiasm. The contribution answer should read as a realistic, specific plan for this domain, not generic ambition.",
   "Sponsorship & Finance":
-    "Weigh persuasion and professionalism: is the outreach pitch clear, tailored, and confident? Does the negotiation answer show composure and value-framing? Reward business sense and communication over jargon.",
+    "Weigh persuasion, professionalism, and business sense in how they describe their experience — look for real evidence of outreach, negotiation, or financial responsibility. Reward a clear, confident contribution answer over jargon.",
   "HR & Admin":
-    "Weigh interpersonal maturity, fairness, and coordination ability. The conflict scenario reveals empathy and decisiveness — reward balanced, people-first approaches that still protect the deadline.",
+    "Weigh interpersonal maturity, fairness, and coordination ability in their experience answer — prior people-management, coordination, or admin roles matter more than titles. The contribution answer should show empathy balanced with follow-through.",
   "PR & Marketing":
-    "Weigh creativity, audience awareness, and copy quality. Judge the campaign pitch on hook, platform fit, and feasibility; judge the caption on punch. Reward original ideas over generic marketing-speak.",
+    "Weigh creativity, audience awareness, and communication quality across their answers. Look for real evidence of content, campaign, or outreach work in their experience answer, and original thinking in how they'd contribute.",
   "Digital Design":
-    "Weigh visual sensibility, design thinking, and tool fluency (Figma/Adobe). The project description should show intent behind choices, not just 'I made it look nice'. Portfolio link (if given) is strong evidence — note if missing.",
+    "Weigh visual sensibility, design thinking, and tool fluency (Figma/Adobe) from their skillset and project answers — the project should show intent behind choices, not just 'I made it look nice'. Portfolio/work links are strong evidence — note if missing or thin.",
   "Media Production":
-    "Weigh production/editing skill and storytelling. The project description should show craft (shooting, pacing, editing) and tool fluency (Premiere/DaVinci/After Effects). Portfolio link (if given) is strong evidence — note if missing.",
+    "Weigh production/editing skill and storytelling from their skillset and project answers — look for craft (shooting, pacing, editing) and tool fluency (Premiere/DaVinci/After Effects). Portfolio/work links are strong evidence — note if missing or thin.",
 };
 
 export function getRubric(_domain: Domain, subdomain: Subdomain): string {

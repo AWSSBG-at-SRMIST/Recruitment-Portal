@@ -10,13 +10,11 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import type { Application, QuestionDef, Subdomain } from "@/types";
-import { DEFAULT_SUBDOMAIN_QUESTIONS } from "@/lib/scoring/questions";
 import type { NewApplication, ApplicationFilter, Repo } from "./types";
 
-// Same AWS account/region as Internal-Dashboard and Official-Website — see
-// lib/repo/index.ts for the STORAGE_BACKEND switch. Recruiter identity
-// itself is NOT stored here — that's the real sbg-members table, read via
-// @/lib/members.
+// Same AWS account/region as Internal-Dashboard and Official-Website.
+// Recruiter identity itself is NOT stored here — that's the real
+// sbg-members table, read via @/lib/members.
 
 const client = new DynamoDBClient({ region: process.env.AWS_REGION || "ap-south-1" });
 const db = DynamoDBDocumentClient.from(client, { marshallOptions: { removeUndefinedValues: true } });
@@ -217,7 +215,7 @@ export const awsRepo: Repo = {
 
   async getSubdomainQuestions(subdomain: Subdomain): Promise<QuestionDef[]> {
     const result = await db.send(new GetCommand({ TableName: TABLE.QUESTIONS, Key: { subdomain } }));
-    return (result.Item?.questions as QuestionDef[]) ?? DEFAULT_SUBDOMAIN_QUESTIONS[subdomain];
+    return (result.Item?.questions as QuestionDef[]) ?? [];
   },
 
   async setSubdomainQuestions(subdomain, questions, updatedBy) {

@@ -4,9 +4,9 @@ import type { MemberRole, SessionUser } from "@/types";
 
 // Member identity is not a separate account system — it IS the club's real
 // membership record. This always queries Internal-Dashboard's own
-// sbg-members table (same AWS account/region), regardless of
-// STORAGE_BACKEND, so any member logs in here with the exact same email
-// their Internal-Dashboard account uses — no separate signup or allowlist.
+// sbg-members table (same AWS account/region), so any member logs in here
+// with the exact same email their Internal-Dashboard account uses — no
+// separate signup or allowlist.
 const client = new DynamoDBClient({ region: process.env.AWS_REGION || "ap-south-1" });
 const db = DynamoDBDocumentClient.from(client);
 

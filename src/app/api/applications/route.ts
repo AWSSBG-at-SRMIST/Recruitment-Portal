@@ -12,6 +12,7 @@ import {
   isValidRegNo,
   isValidPhone,
   isLinkedInUrl,
+  isGithubUrl,
   isValidYear,
   isValidDepartment,
   isValidGender,
@@ -61,7 +62,8 @@ export async function POST(req: NextRequest) {
     const subdomain = get("subdomain");
     const portfolioUrl = sanitizeUrl(get("portfolioUrl"));
     const linkedin = sanitizeUrl(get("linkedin")) || "";
-    const githubUsername = normalizeUsername(get("githubUsername"));
+    const githubLink = sanitizeUrl(get("githubUsername")) || "";
+    const githubUsername = normalizeUsername(githubLink);
     const leetcodeUsername = normalizeUsername(get("leetcodeUsername"));
 
     // AWS certification links — optional, 0-3, each a valid URL.
@@ -105,9 +107,9 @@ export async function POST(req: NextRequest) {
     if (!isValidSubdomain(domain as Domain, subdomain)) {
       return NextResponse.json({ error: "Invalid subdomain for the chosen domain." }, { status: 400 });
     }
-    // GitHub is mandatory for the Technical domain (mirrors the club form).
-    if (domain === "Technical" && !githubUsername) {
-      return NextResponse.json({ error: "A GitHub profile is required for the Technical domain." }, { status: 400 });
+    // GitHub is mandatory for every domain — a real github.com link, not a bare username.
+    if (!githubLink || !isGithubUrl(githubLink) || !githubUsername) {
+      return NextResponse.json({ error: "A valid GitHub profile link is required." }, { status: 400 });
     }
 
     const resume = form.get("resume");
@@ -177,6 +179,7 @@ export async function POST(req: NextRequest) {
       const result = await evaluateApplication({
         domain: domain as Domain,
         subdomain: subdomain as Subdomain,
+        year,
         resumeBuffer: buffer,
         questionnaire,
         portfolioUrl,

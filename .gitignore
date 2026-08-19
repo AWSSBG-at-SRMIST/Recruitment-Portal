@@ -39,12 +39,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-uploads/
-portal.db
-*.db
 .env.local
-
-# SQLite WAL/shm sidecars
-portal.db-*
-*.db-shm
-*.db-wal

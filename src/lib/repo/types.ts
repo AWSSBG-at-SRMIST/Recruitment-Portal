@@ -69,8 +69,8 @@ export interface Repo {
   saveResumeFile(applicationId: string, buffer: Buffer): Promise<string>;
   getResumeFile(fileRef: string): Promise<Buffer | null>;
 
-  // Falls back to DEFAULT_SUBDOMAIN_QUESTIONS (scoring/questions.ts) when a
-  // subdomain hasn't been customized yet.
+  // No code-level fallback — questions live only in DynamoDB, set via the
+  // /questions page. Returns [] if unconfigured.
   getSubdomainQuestions(subdomain: Subdomain): Promise<QuestionDef[]>;
   setSubdomainQuestions(subdomain: Subdomain, questions: QuestionDef[], updatedBy: string): Promise<void>;
 }

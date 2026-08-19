@@ -18,6 +18,7 @@ import { scoreToVerdict, DOMAIN_COMPETENCY_AXES } from "./verdict";
 export interface EvaluationInput {
   domain: Domain;
   subdomain: Subdomain;
+  year: string; // "1st Year" | "2nd Year" — calibrates how strictly experience is judged
   resumeBuffer: Buffer;
   questionnaire: Record<string, string>;
   portfolioUrl: string | null;
@@ -95,7 +96,16 @@ function buildPrompt(
 
   const axes = DOMAIN_COMPETENCY_AXES[input.domain];
 
+  const yearCalibration =
+    input.year === "1st Year"
+      ? "This candidate is a 1st Year — they've had very little time to build experience. Judge them more on potential, learning velocity, and genuine engagement than on the depth/breadth a 2nd year would show. Do not penalise thin experience just because it's thin; penalise vague, low-effort, or copy-pasted answers regardless of year."
+      : "This candidate is a 2nd Year — they've had more time to build real experience. Hold them to a higher bar: expect more concrete depth in their answers and project/experience claims than you would from a 1st year. Do not give credit merely for being further along if their answers show no real growth over a 1st year's.";
+
   return `You are an experienced recruiter for AWS Student Builder Group (AWS SBG) at SRMIST, evaluating a candidate applying to the "${input.subdomain}" subdomain of the "${input.domain}" domain.
+
+CANDIDATE YEAR: ${input.year}
+${yearCalibration}
+Calibrate your expectations by year as above, but always score what they actually demonstrate — never inflate or deflate purely for being in a given year.
 
 EVALUATION RUBRIC FOR THIS SUBDOMAIN:
 ${rubric}
@@ -218,6 +228,16 @@ function heuristicEvaluation(
     }
   }
 
+  // 1st years have had far less time to build a track record — score them a
+  // little more leniently. 2nd years are expected to show more by now, so
+  // hold the baseline slightly higher; genuine strength (GitHub activity,
+  // certs, detailed answers) already earns its own points above regardless.
+  if (input.year === "1st Year") {
+    score += 5;
+  } else if (input.year === "2nd Year") {
+    score -= 3;
+  }
+
   score = Math.max(0, Math.min(100, score));
 
   return {
@@ -292,5 +312,5 @@ export async function evaluateApplication(input: EvaluationInput): Promise<Evalu
 // Convenience wrapper for re-scoring an existing stored application.
 export type StoredForEvaluation = Pick<
   Application,
-  "domain" | "subdomain" | "questionnaire" | "portfolioUrl" | "githubUsername" | "leetcodeUsername"
+  "domain" | "subdomain" | "year" | "questionnaire" | "portfolioUrl" | "githubUsername" | "leetcodeUsername"
 >;
