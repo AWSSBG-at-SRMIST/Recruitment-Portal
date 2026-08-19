@@ -81,10 +81,10 @@ function LoginFormInner() {
           <div className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">
             AWS SBG at SRMIST Recruitment
           </div>
-          <CardTitle className="font-display text-2xl">Sign In</CardTitle>
+          <CardTitle className="font-display text-2xl">Sign in to apply</CardTitle>
           <CardDescription>
             {step === "email"
-              ? "Enter your @srmist.edu.in email to receive a one-time code."
+              ? "Use your @srmist.edu.in email to receive a one-time code — no separate signup, no password."
               : `We sent a 6-digit code to ${email}.`}
           </CardDescription>
         </CardHeader>

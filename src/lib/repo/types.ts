@@ -50,6 +50,7 @@ export interface Repo {
     applicationId: string,
     result: { aiScore: number; aiEvaluation: AIEvaluation; verifiedSignals: VerifiedSignals | null }
   ): Promise<void>;
+  deleteApplication(applicationId: string, resumeFileRef: string): Promise<void>;
 
   // Recruiter/session identity is real member data (see @/lib/members) — the
   // Repo layer only owns OTP/session/rate-limit storage, not who's allowed

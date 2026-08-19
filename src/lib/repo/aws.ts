@@ -8,7 +8,7 @@ import {
   DeleteCommand,
   ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import type { Application, QuestionDef, Subdomain } from "@/types";
 import type { NewApplication, ApplicationFilter, Repo } from "./types";
 
@@ -101,6 +101,15 @@ export const awsRepo: Repo = {
         },
       })
     );
+  },
+
+  async deleteApplication(applicationId, resumeFileRef) {
+    await db.send(new DeleteCommand({ TableName: TABLE.APPLICATIONS, Key: { applicationId } }));
+    try {
+      await s3.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: resumeFileRef }));
+    } catch (err) {
+      console.error("Failed to delete resume file from S3 (application record already deleted):", err);
+    }
   },
 
   async storeOTP(email, otpHash, ttlSeconds) {

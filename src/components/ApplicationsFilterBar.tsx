@@ -33,7 +33,7 @@ export function ApplicationsFilterBar() {
   const subdomainOptions = domain ? DOMAIN_SUBDOMAINS[domain as Domain] : [];
 
   return (
-    <div className="flex flex-wrap items-end gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
       <FilterSelect
         label="Domain"
         value={domain || ANY}
@@ -86,10 +86,10 @@ function FilterSelect({
   disabled?: boolean;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="w-full space-y-1.5 sm:w-48">
       <p className="text-xs font-bold uppercase tracking-wide text-on-surface-variant">{label}</p>
       <Select value={value} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger className="w-48">
+        <SelectTrigger className="w-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

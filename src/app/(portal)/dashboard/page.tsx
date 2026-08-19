@@ -71,10 +71,10 @@ export default async function DashboardPage() {
                     <Link
                       key={sub}
                       href={`/applications?subdomain=${encodeURIComponent(sub)}`}
-                      className="flex items-center justify-between px-2 py-1.5 text-sm hover:bg-surface-container transition-colors"
+                      className="flex items-center justify-between gap-3 px-2 py-1.5 text-sm hover:bg-surface-container transition-colors"
                     >
-                      <span className="text-on-surface-variant">{sub}</span>
-                      <span className="tabular-nums text-on-surface">{count}</span>
+                      <span className="min-w-0 truncate text-on-surface-variant">{sub}</span>
+                      <span className="shrink-0 tabular-nums text-on-surface">{count}</span>
                     </Link>
                   );
                 })}
@@ -107,12 +107,12 @@ function TopCandidates({ applications }: { applications: Application[] }) {
           <Link
             key={a.applicationId}
             href={`/applications/${a.applicationId}`}
-            className="flex items-center justify-between px-2 py-2 text-sm hover:bg-surface-container transition-colors"
+            className="flex items-center justify-between gap-3 px-2 py-2 text-sm hover:bg-surface-container transition-colors"
           >
-            <span className="text-on-surface">
+            <span className="min-w-0 truncate text-on-surface">
               {a.name} <span className="text-on-surface-variant">· {a.subdomain}</span>
             </span>
-            <span className="font-bold tabular-nums text-primary">{a.aiScore}</span>
+            <span className="shrink-0 font-bold tabular-nums text-primary">{a.aiScore}</span>
           </Link>
         ))}
       </CardContent>

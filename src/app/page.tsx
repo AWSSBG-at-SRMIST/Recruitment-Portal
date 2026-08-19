@@ -9,9 +9,16 @@ import { getRecruitmentStatus, getRecruitmentWindow, formatIst } from "@/lib/rec
 // be evaluated fresh on every request, not baked in at build time.
 export const dynamic = "force-dynamic";
 
+const APPLY_CTA_LABEL: Record<string, string> = {
+  before: "Opens Soon",
+  open: "Apply Now",
+  closed: "Applications Closed",
+};
+
 export default function LandingPage() {
   const status = getRecruitmentStatus();
   const { opensAt, closesAt } = getRecruitmentWindow();
+  const applyLabel = APPLY_CTA_LABEL[status];
 
   const heroHeading =
     status === "open" ? (
@@ -68,13 +75,11 @@ export default function LandingPage() {
             <p className="text-label-md mt-6 max-w-xl border-l-2 border-primary/40 pl-5 leading-relaxed text-on-surface-variant">
               {heroSubtext}
             </p>
-            {status === "open" && (
-              <Link href="/apply" className="mt-8 inline-block">
-                <Button variant="default" size="lg">
-                  Apply Now <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            )}
+            <Link href="/apply" className="mt-8 inline-block">
+              <Button variant={status === "open" ? "default" : "outline"} size="lg">
+                {applyLabel} <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </section>
 
@@ -168,14 +173,12 @@ export default function LandingPage() {
                     ? `Opens ${formatIst(opensAt)} IST.`
                     : `Closed ${formatIst(closesAt)} IST. See you next cycle.`}
               </p>
-              {status === "open" && (
-                <Link
-                  href="/apply"
-                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-primary hover:underline"
-                >
-                  Apply Now <ArrowRight className="h-3 w-3" />
-                </Link>
-              )}
+              <Link
+                href="/apply"
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-primary hover:underline"
+              >
+                {applyLabel} <ArrowRight className="h-3 w-3" />
+              </Link>
             </div>
           </div>
         </section>

@@ -9,10 +9,8 @@ import Logo from "../../public/logo.png";
 
 const navLinks = [
   { href: "/", label: "Home" },
-  { href: "/apply", label: "Apply" },
+  { href: "/domains", label: "Domains" },
 ];
-
-const CLUB_WEBSITE_URL = "https://awssbg-srmist.in";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -55,14 +53,6 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
-          <a
-            href={CLUB_WEBSITE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-on-surface-variant hover:text-primary transition-all duration-300 hover:-translate-y-0.5 inline-block relative after:content-[''] after:absolute after:w-full after:scale-x-0 after:h-0.5 after:bottom-0 after:left-0 after:bg-primary hover:after:scale-x-100 after:transition-transform after:duration-300"
-          >
-            Club Website
-          </a>
         </div>
 
         <div className="flex justify-end items-center gap-3">
@@ -98,15 +88,6 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
-          <a
-            href={CLUB_WEBSITE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setIsOpen(false)}
-            className="text-on-surface-variant hover:text-primary transition-colors duration-300 block py-3"
-          >
-            Club Website
-          </a>
           <Link href="/login" onClick={() => setIsOpen(false)} className="text-primary font-bold block py-3">
             Sign In
           </Link>

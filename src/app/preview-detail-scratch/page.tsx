@@ -1,10 +1,7 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, GitBranch, Code2, Sparkles, Star, Award } from "lucide-react";
 import { repo } from "@/lib/repo";
-import { getCurrentUser } from "@/lib/auth";
-import { canChangeStatus, canViewApplication } from "@/lib/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +10,6 @@ import { DeleteApplicationButton } from "@/components/DeleteApplicationButton";
 import { RadarChart } from "@/components/RadarChart";
 import { ScoreGauge } from "@/components/ScoreGauge";
 
-export const metadata: Metadata = { title: "Application" };
 export const dynamic = "force-dynamic";
 
 function timeAgo(iso: string | null | undefined): string {
@@ -26,34 +22,26 @@ function timeAgo(iso: string | null | undefined): string {
   return `${Math.floor(days / 365)} yr ago`;
 }
 
-export default async function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/login");
-
-  const { id } = await params;
-  const app = await repo.getApplication(id);
+export default async function PreviewDetail() {
+  const app = await repo.getApplication("sample-softwaredev-good");
   if (!app) notFound();
-  if (!canViewApplication(user, app)) notFound();
 
   const questions = await repo.getSubdomainQuestions(app.subdomain);
-  const canEditStatus = canChangeStatus(user, app);
+  const canEditStatus = true;
   const signals = app.verifiedSignals;
   const evaluation = app.aiEvaluation;
 
-  // For Technical candidates, split detected skills into "verified on GitHub"
-  // vs "claimed only" — the inflation-aware view from Hiresense.
   const ghLangs = new Set(Object.keys(signals?.githubLanguages ?? {}).map((l) => l.toLowerCase()));
   const detected = evaluation?.detectedSkills ?? [];
   const verifiedSkills = detected.filter((s) => ghLangs.has(s.toLowerCase().replace("golang", "go")));
   const claimedSkills = detected.filter((s) => !verifiedSkills.includes(s));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <Link href="/applications" className="inline-flex items-center gap-2 text-sm text-on-surface-variant hover:text-primary transition-colors">
         <ArrowLeft className="h-4 w-4" /> Back to applications
       </Link>
 
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h1 className="font-display break-words text-3xl font-bold text-on-surface">{app.name}</h1>
@@ -93,7 +81,6 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         </div>
       </div>
 
-      {/* AI verdict banner */}
       {evaluation && (
         <Card className="border-primary/30 bg-gradient-to-r from-primary/10 to-transparent">
           <CardContent className="p-6">
@@ -106,7 +93,6 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         </Card>
       )}
 
-      {/* Score / summary / radar */}
       <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader>
@@ -142,7 +128,6 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         </Card>
       </div>
 
-      {/* Strengths / concerns */}
       {evaluation && (
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
@@ -178,7 +163,6 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         </div>
       )}
 
-      {/* Skill geography */}
       {detected.length > 0 && (
         <Card>
           <CardHeader>
@@ -211,7 +195,6 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         </Card>
       )}
 
-      {/* GitHub activity + contact + leetcode */}
       <div className="grid gap-6 lg:grid-cols-3">
         <Card>
           <CardHeader>
@@ -277,52 +260,15 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <Stat label="public repos" value={String(signals.githubPublicRepos ?? 0)} />
-                <Stat
-                  label="stars"
-                  value={String(signals.githubTotalStars ?? 0)}
-                  icon={<Star className="h-3 w-3" />}
-                />
+                <Stat label="stars" value={String(signals.githubTotalStars ?? 0)} icon={<Star className="h-3 w-3" />} />
                 <Stat label="followers" value={String(signals.githubFollowers ?? 0)} />
                 <Stat label="last active" value={timeAgo(signals.githubLastActive)} />
               </div>
-              {signals.githubSubScores && (
-                <div className="space-y-2 pt-1">
-                  <SubScore label="Tech Breadth" value={signals.githubSubScores.techBreadth} />
-                  <SubScore label="Project Depth" value={signals.githubSubScores.projectDepth} />
-                  <SubScore label="Recency" value={signals.githubSubScores.recency} />
-                </div>
-              )}
-              {signals.githubLanguages && Object.keys(signals.githubLanguages).length > 0 && (
-                <div>
-                  <p className="mb-1.5 text-xs uppercase tracking-wide text-on-surface-variant">Top languages</p>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.keys(signals.githubLanguages)
-                      .slice(0, 6)
-                      .map((l) => (
-                        <Badge key={l} variant="secondary">{l}</Badge>
-                      ))}
-                  </div>
-                </div>
-              )}
-              {signals.leetcodeSolved && (
-                <div className="border-t border-on-surface/10 pt-3 text-sm">
-                  <span className="text-on-surface-variant">LeetCode: </span>
-                  Easy {signals.leetcodeSolved.easy} · Medium {signals.leetcodeSolved.medium} · Hard{" "}
-                  {signals.leetcodeSolved.hard}
-                  {signals.leetcodeRanking ? ` · rank ${signals.leetcodeRanking.toLocaleString()}` : ""}
-                </div>
-              )}
-              {signals.inflationFlag && (
-                <div className="border-2 border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-300">
-                  ⚠ {signals.inflationNote}
-                </div>
-              )}
             </CardContent>
           </Card>
         )}
       </div>
 
-      {/* AWS certifications */}
       {app.awsCertLinks.length > 0 && (
         <Card>
           <CardHeader>
@@ -332,13 +278,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           </CardHeader>
           <CardContent className="space-y-2">
             {app.awsCertLinks.map((link, i) => (
-              <a
-                key={i}
-                href={link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-sm text-primary hover:underline"
-              >
+              <a key={i} href={link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-primary hover:underline">
                 <ExternalLink className="h-3.5 w-3.5" /> Certificate {i + 1}
               </a>
             ))}
@@ -346,7 +286,6 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         </Card>
       )}
 
-      {/* Questionnaire */}
       <Card>
         <CardHeader>
           <CardTitle>Questionnaire responses</CardTitle>
@@ -363,22 +302,6 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
               </p>
             </div>
           ))}
-          {/* Answers stored under a question id the subdomain's current
-              questions no longer have — e.g. this application was submitted
-              before a Manager edited the questionnaire. Never let a real
-              answer silently disappear. */}
-          {Object.entries(app.questionnaire)
-            .filter(([id, answer]) => answer?.trim() && !questions.some((q) => q.id === id))
-            .map(([id, answer]) => (
-              <div key={id} className="min-w-0 border-2 border-amber-500/30 bg-amber-500/5 p-4">
-                <p className="break-words text-sm font-semibold text-amber-400">
-                  {id} <span className="italic font-normal text-on-surface-variant">(question since changed/removed)</span>
-                </p>
-                <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-on-surface-variant">
-                  {answer}
-                </p>
-              </div>
-            ))}
         </CardContent>
       </Card>
     </div>
@@ -402,18 +325,6 @@ function Stat({ label, value, icon }: { label: string; value: string; icon?: Rea
         {value}
       </div>
       <div className="text-xs text-on-surface-variant">{label}</div>
-    </div>
-  );
-}
-
-function SubScore({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="w-28 shrink-0 text-xs text-on-surface-variant">{label}</span>
-      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-container">
-        <div className="h-full rounded-full bg-gradient-to-r from-brand-primary to-brand-primary-light" style={{ width: `${value}%` }} />
-      </div>
-      <span className="w-8 text-right text-xs tabular-nums text-on-surface-variant">{value}</span>
     </div>
   );
 }

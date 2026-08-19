@@ -1,6 +1,8 @@
-import { Heart } from "lucide-react";
+import { Heart, Globe } from "lucide-react";
 import { SiMeetup, SiWhatsapp, SiInstagram, SiGithub } from "react-icons/si";
 import { FaLinkedin } from "react-icons/fa6";
+
+const CLUB_WEBSITE_URL = "https://awssbg-srmist.in";
 
 const SOCIALS = [
   { href: "https://www.instagram.com/awssbg.at.srmist/", label: "Instagram", icon: SiInstagram },
@@ -22,8 +24,25 @@ export function Footer() {
             <span className="flex items-center gap-1.5 whitespace-nowrap text-xs md:text-sm">
               Made with <Heart size={12} className="text-primary fill-primary" /> by Tech Team @AWS SBG at SRMIST.
             </span>
+            <a
+              href={CLUB_WEBSITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-bold uppercase tracking-wide text-primary hover:underline"
+            >
+              Visit the Club Website →
+            </a>
           </div>
           <div className="flex flex-wrap gap-2.5 justify-center md:justify-end">
+            <a
+              href={CLUB_WEBSITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Club Website"
+              className="w-10 h-10 flex items-center justify-center border-2 border-on-surface/15 text-on-surface-variant hover:border-primary hover:text-primary transition-colors duration-200"
+            >
+              <Globe size={15} />
+            </a>
             {SOCIALS.map(({ href, label, icon: Icon }) => (
               <a
                 key={label}

@@ -9,7 +9,7 @@ export function RadarChart({ data, size = 260 }: { data: CompetencyScore[]; size
 
   const cx = size / 2;
   const cy = size / 2;
-  const radius = size / 2 - 46; // leave room for labels
+  const radius = size / 2 - 62; // leave room for labels
   const rings = [0.25, 0.5, 0.75, 1];
 
   // Angle for axis i, starting at top (−90°) going clockwise.
@@ -27,7 +27,13 @@ export function RadarChart({ data, size = 260 }: { data: CompetencyScore[]; size
     .join(" ");
 
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} className="w-full max-w-[280px]" role="img" aria-label="Competency radar">
+    <svg
+      viewBox={`0 0 ${size} ${size}`}
+      className="w-full max-w-[280px] overflow-visible"
+      style={{ overflow: "visible" }}
+      role="img"
+      aria-label="Competency radar"
+    >
       {/* rings */}
       {rings.map((r) => (
         <polygon
