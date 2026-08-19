@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMemberByEmail } from "@/lib/members";
+import { getMemberByEmail, getObserverByEmail } from "@/lib/members";
 import { isAdmin } from "@/lib/permissions";
 import { verifyOTP, deleteOTP, createSession, setSessionCookie } from "@/lib/auth";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -30,10 +30,11 @@ export async function POST(req: NextRequest) {
     }
 
     // One login for everyone: a real club member (any role) gets their
-    // member record; anyone else who just verified an @srmist.edu.in email
-    // is a plain applicant session with no role/domain/subdomain.
+    // member record; a faculty/industry mentor on the observer allowlist
+    // gets read-only access; anyone else who just verified an
+    // @srmist.edu.in email is a plain applicant session with no role.
     const member = await getMemberByEmail(normalizedEmail);
-    const sessionUser: SessionUser = member ?? {
+    const sessionUser: SessionUser = member ?? (await getObserverByEmail(normalizedEmail)) ?? {
       memberId: null,
       name: normalizedEmail.split("@")[0],
       email: normalizedEmail,

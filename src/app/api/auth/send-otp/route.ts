@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMemberByEmail } from "@/lib/members";
+import { getMemberByEmail, getObserverByEmail } from "@/lib/members";
 import { storeOTP, checkOTPResendCooldown } from "@/lib/auth";
 import { sendOTPEmail } from "@/lib/email";
 import { generateOTP } from "@/lib/utils";
@@ -32,10 +32,11 @@ export async function POST(req: NextRequest) {
     if (await checkOTPResendCooldown(normalizedEmail)) return genericResponse();
 
     const member = await getMemberByEmail(normalizedEmail);
+    const greetingName = member?.name ?? (await getObserverByEmail(normalizedEmail))?.name;
 
     const otp = generateOTP();
     await storeOTP(normalizedEmail, otp);
-    await sendOTPEmail(normalizedEmail, otp, member?.name);
+    await sendOTPEmail(normalizedEmail, otp, greetingName);
 
     return genericResponse();
   } catch (error) {

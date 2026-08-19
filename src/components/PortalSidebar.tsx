@@ -15,11 +15,13 @@ const ROLE_LABELS: Record<string, string> = {
   DIRECTOR: "Director",
   MANAGER: "Manager",
   ASSOCIATE: "Associate",
+  OBSERVER: "Faculty Mentor",
 };
 
 function scopeLabel(user: SessionUser): string {
   const role = user.role ? (ROLE_LABELS[user.role] ?? user.role) : "—";
   if (user.role === "SBG_LEADER" || user.role === "SECRETARY") return `${role} · All access`;
+  if (user.role === "OBSERVER") return `${role} · View only`;
   if (user.role === "DIRECTOR") return `${role} · ${user.domain ?? "—"}`;
   return `${role} · ${user.subdomain ?? "—"}`;
 }

@@ -107,9 +107,11 @@ export interface Application {
   appliedAt: number;
 }
 
-// Every role a club member can hold. Admin-dashboard access (vs. the plain
-// applicant chat flow) is decided in lib/permissions.ts, not here.
-export type MemberRole = "SBG_LEADER" | "SECRETARY" | "DIRECTOR" | "MANAGER" | "ASSOCIATE" | "BUILDER";
+// Every role a club member can hold, plus OBSERVER — faculty/industry
+// mentors who aren't club members at all (no sbg-members record) but get
+// read-only visibility into every application. Admin-dashboard access (vs.
+// the plain applicant chat flow) is decided in lib/permissions.ts, not here.
+export type MemberRole = "SBG_LEADER" | "SECRETARY" | "DIRECTOR" | "MANAGER" | "ASSOCIATE" | "BUILDER" | "OBSERVER";
 
 // One unified login for the whole app. `role`/`memberId` are null for
 // someone who isn't a club member at all — a prospective applicant who just

@@ -1,5 +1,5 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import type { MemberRole, SessionUser } from "@/types";
 
 // Member identity is not a separate account system — it IS the club's real
@@ -11,6 +11,7 @@ const client = new DynamoDBClient({ region: process.env.AWS_REGION || "ap-south-
 const db = DynamoDBDocumentClient.from(client);
 
 const MEMBERS_TABLE = "sbg-members";
+const OBSERVERS_TABLE = "sbg-recruitment-observers";
 
 // Returns null for: no such member, or an inactive one. Role-based access
 // (admin dashboard vs. applicant chat) is decided by callers via
@@ -37,5 +38,24 @@ export async function getMemberByEmail(email: string): Promise<SessionUser | nul
     role: member.role as MemberRole,
     domain: member.domain ?? null,
     subdomain: member.subdomain ?? null,
+  };
+}
+
+// Faculty/industry mentors — not club members (no entry in sbg-members, no
+// memberId, no domain/subdomain), but they should be able to see every
+// application read-only. Lives in its own DynamoDB table (same account,
+// same pattern as everything else) rather than hardcoded in source, so
+// adding/removing one is a data change, not a redeploy.
+export async function getObserverByEmail(email: string): Promise<SessionUser | null> {
+  const result = await db.send(new GetCommand({ TableName: OBSERVERS_TABLE, Key: { email } }));
+  if (!result.Item) return null;
+
+  return {
+    memberId: null,
+    name: result.Item.name || "Faculty Mentor",
+    email,
+    role: "OBSERVER",
+    domain: null,
+    subdomain: null,
   };
 }
