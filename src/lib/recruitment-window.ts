@@ -5,8 +5,8 @@
 //
 // Explicit +05:30 offsets so this is correct regardless of the server's own
 // timezone (IST is what matters here — SRMIST, not the deploy region).
-const OPENS_AT = process.env.RECRUITMENT_OPENS_AT || "2026-08-22T00:01:00+05:30";
-const CLOSES_AT = process.env.RECRUITMENT_CLOSES_AT || "2026-08-26T23:59:00+05:30";
+const OPENS_AT = process.env.RECRUITMENT_OPENS_AT || "2026-08-27T00:01:00+05:30";
+const CLOSES_AT = process.env.RECRUITMENT_CLOSES_AT || "2026-08-29T11:59:00+05:30";
 
 export type RecruitmentWindowStatus = "before" | "open" | "closed";
 
