@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User } from "lucide-react";
 import Logo from "../../public/logo.png";
 
 const navLinks = [
@@ -12,7 +12,7 @@ const navLinks = [
   { href: "/domains", label: "Domains" },
 ];
 
-export function Navbar() {
+export function Navbar({ account }: { account?: { name: string; href: string } | null }) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
@@ -56,12 +56,22 @@ export function Navbar() {
         </div>
 
         <div className="flex justify-end items-center gap-3">
-          <Link
-            href="/login"
-            className="hidden md:inline-block text-xs uppercase tracking-wide font-bold px-4 py-2 border-2 border-primary text-primary hover:bg-primary hover:text-on-primary transition-colors duration-300"
-          >
-            Sign In
-          </Link>
+          {account ? (
+            <Link
+              href={account.href}
+              className="hidden max-w-[180px] items-center gap-2 truncate text-xs uppercase tracking-wide font-bold px-4 py-2 border-2 border-primary text-primary hover:bg-primary hover:text-on-primary transition-colors duration-300 md:inline-flex"
+            >
+              <User className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{account.name}</span>
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="hidden md:inline-block text-xs uppercase tracking-wide font-bold px-4 py-2 border-2 border-primary text-primary hover:bg-primary hover:text-on-primary transition-colors duration-300"
+            >
+              Sign In
+            </Link>
+          )}
           <button
             aria-label="Toggle menu"
             onClick={() => setIsOpen((v) => !v)}
@@ -88,9 +98,19 @@ export function Navbar() {
               {link.label}
             </Link>
           ))}
-          <Link href="/login" onClick={() => setIsOpen(false)} className="text-primary font-bold block py-3">
-            Sign In
-          </Link>
+          {account ? (
+            <Link
+              href={account.href}
+              onClick={() => setIsOpen(false)}
+              className="truncate text-primary font-bold block py-3"
+            >
+              {account.name}
+            </Link>
+          ) : (
+            <Link href="/login" onClick={() => setIsOpen(false)} className="text-primary font-bold block py-3">
+              Sign In
+            </Link>
+          )}
         </div>
       </div>
     </nav>

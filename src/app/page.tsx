@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { getRecruitmentStatus, getRecruitmentWindow, formatIst } from "@/lib/recruitment-window";
+import { getCurrentUser } from "@/lib/auth";
+import { isAdmin } from "@/lib/permissions";
 
 // Status changes purely with wall-clock time, not any request input — must
 // be evaluated fresh on every request, not baked in at build time.
@@ -15,10 +17,13 @@ const APPLY_CTA_LABEL: Record<string, string> = {
   closed: "Applications Closed",
 };
 
-export default function LandingPage() {
+export default async function LandingPage() {
   const status = getRecruitmentStatus();
   const { opensAt, closesAt } = getRecruitmentWindow();
   const applyLabel = APPLY_CTA_LABEL[status];
+
+  const user = await getCurrentUser();
+  const account = user ? { name: user.name, href: isAdmin(user) ? "/dashboard" : "/apply" } : null;
 
   const heroHeading =
     status === "open" ? (
@@ -56,7 +61,7 @@ export default function LandingPage() {
         }}
       />
 
-      <Navbar />
+      <Navbar account={account} />
 
       <main className="flex-1">
         {/* Hero */}

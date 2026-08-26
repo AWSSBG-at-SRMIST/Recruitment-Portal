@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { getRecruitmentStatus, getRecruitmentWindow, formatIst } from "@/lib/recruitment-window";
+import { getCurrentUser } from "@/lib/auth";
+import { isAdmin } from "@/lib/permissions";
 
 export const metadata: Metadata = { title: "Domains" };
 
@@ -121,8 +123,10 @@ function DomainSection({
   );
 }
 
-export default function DomainsPage() {
+export default async function DomainsPage() {
   const status = getRecruitmentStatus();
+  const user = await getCurrentUser();
+  const account = user ? { name: user.name, href: isAdmin(user) ? "/dashboard" : "/apply" } : null;
   const { opensAt, closesAt } = getRecruitmentWindow();
 
   const ctaLabel = status === "open" ? "Apply Now" : status === "before" ? "Opens Soon" : "Applications Closed";
@@ -144,7 +148,7 @@ export default function DomainsPage() {
         }}
       />
 
-      <Navbar />
+      <Navbar account={account} />
 
       <main className="flex-1">
         <section className="mx-auto max-w-container-max px-margin-mobile pt-28 pb-10 md:px-margin-desktop md:pt-32">
