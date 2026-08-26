@@ -6,6 +6,7 @@ import { Footer } from "@/components/Footer";
 import { getRecruitmentStatus, getRecruitmentWindow, formatIst } from "@/lib/recruitment-window";
 import { getCurrentUser } from "@/lib/auth";
 import { isAdmin } from "@/lib/permissions";
+import { DEPARTMENT_OPTIONS } from "@/types";
 
 // Status changes purely with wall-clock time, not any request input — must
 // be evaluated fresh on every request, not baked in at build time.
@@ -88,8 +89,81 @@ export default async function LandingPage() {
           </div>
         </section>
 
-        {/* Video */}
+        {/* Info cards */}
         <section className="mx-auto max-w-container-max px-margin-mobile pb-14 md:px-margin-desktop">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="border-2 border-on-surface/10 bg-surface-container-lowest p-5">
+              <Users className="mb-3 h-5 w-5 text-primary" />
+              <p className="mb-2 text-[10px] uppercase tracking-[0.25em] text-primary">Open To</p>
+              <p className="font-display text-lg font-bold leading-tight text-on-surface">
+                1st &amp; 2nd years of School of Computing only.
+              </p>
+              <p className="mt-2 text-xs text-on-surface-variant">
+                {DEPARTMENT_OPTIONS.join(" · ")}
+              </p>
+            </div>
+
+            <div className="border-2 border-on-surface/10 bg-surface-container-lowest p-5">
+              <Sparkles className="mb-3 h-5 w-5 text-primary" />
+              <p className="mb-2 text-[10px] uppercase tracking-[0.25em] text-primary">Experience</p>
+              <p className="text-base font-bold text-on-surface">None required.</p>
+              <p className="mt-1 text-sm text-on-surface-variant">We build from zero, together.</p>
+            </div>
+
+            <div className="border-2 border-on-surface/10 bg-surface-container-lowest p-5">
+              <Layers className="mb-3 h-5 w-5 text-primary" />
+              <p className="mb-3 text-[10px] uppercase tracking-[0.25em] text-primary">Domains</p>
+              <div className="flex flex-col gap-2 text-sm font-bold text-on-surface">
+                <span className="flex items-center gap-2">
+                  <span className="inline-block h-px w-4 bg-primary" />Technical
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="inline-block h-px w-4 bg-primary" />Corporate
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="inline-block h-px w-4 bg-primary" />Creatives
+                </span>
+              </div>
+              <Link
+                href="/domains"
+                className="group mt-4 -mx-5 -mb-5 flex items-center justify-between border-t-2 border-on-surface/10 px-5 py-3 text-xs font-bold uppercase tracking-wide text-primary transition-colors hover:bg-primary/5"
+              >
+                Explore all 9 subdomains
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+
+            <div className="border-2 border-primary/40 bg-surface-container-lowest p-5">
+              {status === "open" ? (
+                <Zap className="mb-3 h-5 w-5 text-primary" />
+              ) : status === "before" ? (
+                <Clock className="mb-3 h-5 w-5 text-primary" />
+              ) : (
+                <Lock className="mb-3 h-5 w-5 text-primary" />
+              )}
+              <p className="mb-2 text-[10px] uppercase tracking-[0.25em] text-primary">Status</p>
+              <p className="text-base font-bold text-on-surface">
+                {status === "open" ? "Open now." : status === "before" ? "Opening soon." : "Closed."}
+              </p>
+              <p className="mt-1 text-xs text-on-surface-variant">
+                {status === "open"
+                  ? "Pick a domain, chat with Nova, attach your resume — done in a few minutes."
+                  : status === "before"
+                    ? `Opens ${formatIst(opensAt)} IST.`
+                    : `Closed ${formatIst(closesAt)} IST. See you next cycle.`}
+              </p>
+              <Link
+                href="/apply"
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-primary hover:underline"
+              >
+                {applyLabel} <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Video */}
+        <section className="mx-auto max-w-container-max px-margin-mobile pb-20 md:px-margin-desktop">
           <p className="mb-4 text-xs uppercase tracking-[0.3em] text-primary">Club Overview</p>
           <div className="relative mx-auto max-w-4xl">
             <div className="pointer-events-none absolute -top-2 -left-2 z-10 h-5 w-5 border-l-2 border-t-2 border-primary" />
@@ -123,69 +197,6 @@ export default async function LandingPage() {
           <p className="mx-auto mt-3 max-w-4xl text-[10px] uppercase tracking-[0.25em] text-on-surface-variant/50">
             What is AWS SBG at SRMIST? — Club Overview
           </p>
-        </section>
-
-        {/* Info cards */}
-        <section className="mx-auto max-w-container-max px-margin-mobile pb-20 md:px-margin-desktop">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="border-2 border-on-surface/10 bg-surface-container-lowest p-5">
-              <Users className="mb-3 h-5 w-5 text-primary" />
-              <p className="mb-2 text-[10px] uppercase tracking-[0.25em] text-primary">Open To</p>
-              <p className="font-display text-xl font-bold leading-tight text-on-surface">
-                CSE — 1st &amp; 2nd year.
-              </p>
-            </div>
-
-            <div className="border-2 border-on-surface/10 bg-surface-container-lowest p-5">
-              <Sparkles className="mb-3 h-5 w-5 text-primary" />
-              <p className="mb-2 text-[10px] uppercase tracking-[0.25em] text-primary">Experience</p>
-              <p className="text-base font-bold text-on-surface">None required.</p>
-              <p className="mt-1 text-sm text-on-surface-variant">We build from zero, together.</p>
-            </div>
-
-            <div className="border-2 border-on-surface/10 bg-surface-container-lowest p-5">
-              <Layers className="mb-3 h-5 w-5 text-primary" />
-              <p className="mb-3 text-[10px] uppercase tracking-[0.25em] text-primary">Domains</p>
-              <div className="flex flex-col gap-2 text-sm font-bold text-on-surface">
-                <span className="flex items-center gap-2">
-                  <span className="inline-block h-px w-4 bg-primary" />Technical
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="inline-block h-px w-4 bg-primary" />Corporate
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="inline-block h-px w-4 bg-primary" />Creatives
-                </span>
-              </div>
-            </div>
-
-            <div className="border-2 border-primary/40 bg-surface-container-lowest p-5">
-              {status === "open" ? (
-                <Zap className="mb-3 h-5 w-5 text-primary" />
-              ) : status === "before" ? (
-                <Clock className="mb-3 h-5 w-5 text-primary" />
-              ) : (
-                <Lock className="mb-3 h-5 w-5 text-primary" />
-              )}
-              <p className="mb-2 text-[10px] uppercase tracking-[0.25em] text-primary">Status</p>
-              <p className="text-base font-bold text-on-surface">
-                {status === "open" ? "Open now." : status === "before" ? "Opening soon." : "Closed."}
-              </p>
-              <p className="mt-1 text-xs text-on-surface-variant">
-                {status === "open"
-                  ? "Pick a domain, chat with Nova, attach your resume — done in a few minutes."
-                  : status === "before"
-                    ? `Opens ${formatIst(opensAt)} IST.`
-                    : `Closed ${formatIst(closesAt)} IST. See you next cycle.`}
-              </p>
-              <Link
-                href="/apply"
-                className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-primary hover:underline"
-              >
-                {applyLabel} <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-          </div>
         </section>
       </main>
 
