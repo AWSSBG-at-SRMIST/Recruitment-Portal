@@ -17,7 +17,7 @@ export interface QuestionDef {
   id: string;
   label: string;
   placeholder?: string;
-  type: "text" | "textarea";
+  type: "text" | "textarea" | "link";
 }
 
 export type ApplicationStatus = "APPLIED" | "SHORTLISTED" | "INTERVIEW" | "SELECTED" | "REJECTED";

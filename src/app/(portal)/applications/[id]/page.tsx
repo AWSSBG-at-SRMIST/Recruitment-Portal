@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import type { QuestionDef } from "@/types";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ExternalLink, GitBranch, Code2, Sparkles, Star, Award } from "lucide-react";
 import { repo } from "@/lib/repo";
 import { getCurrentUser } from "@/lib/auth";
 import { canChangeStatus, canViewApplication } from "@/lib/permissions";
+import { sanitizeUrl } from "@/lib/validation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -358,9 +360,9 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
                 <span className="shrink-0 text-primary">{i + 1}.</span>
                 <span className="break-words">{q.label}</span>
               </p>
-              <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-on-surface-variant">
-                {app.questionnaire[q.id]?.trim() || <span className="italic">No answer</span>}
-              </p>
+              <div className="mt-2 text-sm leading-relaxed text-on-surface-variant">
+                <AnswerText type={q.type} value={app.questionnaire[q.id]} />
+              </div>
             </div>
           ))}
           {/* Answers stored under a question id the subdomain's current
@@ -381,6 +383,42 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             ))}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+// A "link" question can hold one URL or several pipe-separated ones (the
+// apply form's convention, e.g. "link1 | link2 | link3"). Only pieces that
+// actually look like a URL get turned into clickable links — plain text
+// like "not available" is left as-is rather than becoming a broken link.
+const URL_LIKE = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i;
+
+function AnswerText({ type, value }: { type: QuestionDef["type"]; value: string | undefined }) {
+  const trimmed = value?.trim();
+  if (!trimmed) return <span className="italic">No answer</span>;
+
+  if (type !== "link") {
+    return <p className="whitespace-pre-wrap break-words">{trimmed}</p>;
+  }
+
+  const pieces = trimmed.split("|").map((p) => p.trim()).filter(Boolean);
+  return (
+    <div className="flex flex-col gap-1">
+      {pieces.map((piece, i) =>
+        URL_LIKE.test(piece) ? (
+          <a
+            key={i}
+            href={sanitizeUrl(piece) ?? piece}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 break-all text-primary hover:underline"
+          >
+            <ExternalLink className="h-3.5 w-3.5 shrink-0" /> {piece}
+          </a>
+        ) : (
+          <span key={i} className="break-words">{piece}</span>
+        )
+      )}
     </div>
   );
 }

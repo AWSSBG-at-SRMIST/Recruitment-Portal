@@ -46,7 +46,7 @@ export async function PUT(req: NextRequest) {
     const id = typeof q.id === "string" ? q.id.trim().toLowerCase().replace(/[^a-z0-9_]/g, "_") : "";
     const label = typeof q.label === "string" ? q.label.trim() : "";
     const placeholder = typeof q.placeholder === "string" ? q.placeholder.trim() : undefined;
-    const type = q.type === "textarea" ? "textarea" : "text";
+    const type = q.type === "textarea" ? "textarea" : q.type === "link" ? "link" : "text";
     if (!id || !label) {
       return NextResponse.json({ error: "Every question needs an id and a label" }, { status: 400 });
     }

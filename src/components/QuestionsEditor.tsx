@@ -145,6 +145,7 @@ export function QuestionsEditor({
                       <SelectContent>
                         <SelectItem value="text">Short text</SelectItem>
                         <SelectItem value="textarea">Long answer</SelectItem>
+                        <SelectItem value="link">Link</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
