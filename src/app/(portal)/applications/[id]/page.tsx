@@ -3,6 +3,8 @@ import type { QuestionDef } from "@/types";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ExternalLink, GitBranch, Code2, Sparkles, Star, Award } from "lucide-react";
+import { SiInstagram, SiMeetup } from "react-icons/si";
+import { FaLinkedin } from "react-icons/fa6";
 import { repo } from "@/lib/repo";
 import { getCurrentUser } from "@/lib/auth";
 import { canChangeStatus, canViewApplication } from "@/lib/permissions";
@@ -85,11 +87,15 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             </Badge>
           )}
           <div className="flex flex-wrap gap-2 sm:justify-end">
-            <a href={`/api/applications/${app.applicationId}/resume`} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="sm">
-                <ExternalLink className="h-4 w-4" /> View resume
-              </Button>
-            </a>
+            {app.resumeFileRef ? (
+              <a href={`/api/applications/${app.applicationId}/resume`} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm">
+                  <ExternalLink className="h-4 w-4" /> View resume
+                </Button>
+              </a>
+            ) : (
+              <Badge variant="outline">No resume submitted</Badge>
+            )}
             {canEditStatus && <DeleteApplicationButton applicationId={app.applicationId} />}
           </div>
         </div>
@@ -322,6 +328,43 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
             </CardContent>
           </Card>
         )}
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">Socials</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="flex items-center gap-2 text-sm">
+              <SiInstagram className="h-4 w-4 shrink-0 text-primary" />
+              {app.instagramUsername ? (
+                <a
+                  href={`https://instagram.com/${app.instagramUsername}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="break-all text-primary hover:underline"
+                >
+                  @{app.instagramUsername}
+                </a>
+              ) : (
+                <span className="text-on-surface-variant">Not followed</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <SiMeetup className="h-4 w-4 shrink-0 text-primary" />
+              {app.meetupUsername ? (
+                <span className="break-all text-on-surface">{app.meetupUsername}</span>
+              ) : (
+                <span className="text-on-surface-variant">Not joined</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <FaLinkedin className="h-4 w-4 shrink-0 text-primary" />
+              <span className={app.followedLinkedin ? "text-on-surface" : "text-on-surface-variant"}>
+                {app.followedLinkedin ? "Followed" : "Not followed"}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* AWS certifications */}

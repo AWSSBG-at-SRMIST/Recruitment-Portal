@@ -12,7 +12,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email and OTP are required" }, { status: 400 });
     }
 
-    if (!(await checkRateLimit(`verify-otp:${getClientIp(req)}`, 20, 10 * 60))) {
+    // Same shared-campus-IP reasoning as send-otp — high ceiling, still caps
+    // sustained brute-force attempts (OTP itself is short-lived and locks
+    // after 5 wrong tries per email regardless of this limit).
+    if (!(await checkRateLimit(`verify-otp:${getClientIp(req)}`, 60, 10 * 60))) {
       return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
     }
 

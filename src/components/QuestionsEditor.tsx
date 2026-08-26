@@ -19,10 +19,12 @@ export function QuestionsEditor({
   editableSubdomains,
   initialSubdomain,
   initialQuestions,
+  locked,
 }: {
   editableSubdomains: Subdomain[];
   initialSubdomain: Subdomain;
   initialQuestions: QuestionDef[];
+  locked: boolean;
 }) {
   const router = useRouter();
   const [subdomain, setSubdomain] = useState(initialSubdomain);
@@ -122,7 +124,12 @@ export function QuestionsEditor({
             <Card key={i}>
               <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <CardTitle className="text-base">Question {i + 1}</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => removeQuestion(i)} disabled={questions.length <= 1}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removeQuestion(i)}
+                  disabled={locked || questions.length <= 1}
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </CardHeader>
@@ -133,12 +140,17 @@ export function QuestionsEditor({
                     <Input
                       value={q.id}
                       placeholder="e.g. project"
+                      disabled={locked}
                       onChange={(e) => updateQuestion(i, { id: e.target.value })}
                     />
                   </div>
                   <div className="space-y-1.5">
                     <Label>Answer type</Label>
-                    <Select value={q.type} onValueChange={(v) => updateQuestion(i, { type: v as QuestionDef["type"] })}>
+                    <Select
+                      value={q.type}
+                      onValueChange={(v) => updateQuestion(i, { type: v as QuestionDef["type"] })}
+                      disabled={locked}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -155,6 +167,7 @@ export function QuestionsEditor({
                   <Textarea
                     value={q.label}
                     className="min-h-[60px]"
+                    disabled={locked}
                     onChange={(e) => updateQuestion(i, { label: e.target.value })}
                   />
                 </div>
@@ -162,6 +175,7 @@ export function QuestionsEditor({
                   <Label>Placeholder (optional hint)</Label>
                   <Input
                     value={q.placeholder ?? ""}
+                    disabled={locked}
                     onChange={(e) => updateQuestion(i, { placeholder: e.target.value })}
                   />
                 </div>
@@ -169,13 +183,13 @@ export function QuestionsEditor({
             </Card>
           ))}
 
-          <Button variant="outline" onClick={addQuestion} disabled={questions.length >= 10}>
+          <Button variant="outline" onClick={addQuestion} disabled={locked || questions.length >= 10}>
             <Plus className="h-4 w-4" /> Add question
           </Button>
 
           <div>
-            <Button onClick={save} disabled={saving}>
-              {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : "Save questions"}
+            <Button onClick={save} disabled={locked || saving}>
+              {locked ? "Locked" : saving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : "Save questions"}
             </Button>
           </div>
         </div>

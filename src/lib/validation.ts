@@ -44,9 +44,10 @@ export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
-// SRM registration number, e.g. RA2311003011411 (matches the club form's rule).
+// SRM registration number, e.g. RA2511003011411 — restricted to the 2025 and
+// 2026 batches (RA25.../RA26...) since recruitment is 1st/2nd year only.
 export function isValidRegNo(regNo: string): boolean {
-  return /^RA\d{10,13}$/.test(regNo.trim().toUpperCase());
+  return /^RA(25|26)\d{8,11}$/.test(regNo.trim().toUpperCase());
 }
 
 // 10-digit Indian mobile (matches the club form's rule).

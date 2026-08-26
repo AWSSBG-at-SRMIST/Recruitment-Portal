@@ -18,7 +18,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    if (!(await checkRateLimit(`send-otp:${getClientIp(req)}`, 10, 10 * 60))) {
+    // Rate-limited per IP, not per email — a real per-email cooldown already
+    // exists below (checkOTPResendCooldown). Campus WiFi puts many students
+    // behind one shared public IP, so this ceiling has to be high enough that
+    // a busy recruitment window doesn't collectively lock out legitimate
+    // users sharing that IP; it only needs to catch sustained abuse.
+    if (!(await checkRateLimit(`send-otp:${getClientIp(req)}`, 60, 10 * 60))) {
       return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
     }
 

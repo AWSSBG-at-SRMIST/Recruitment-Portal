@@ -3,6 +3,7 @@ import { repo } from "@/lib/repo";
 import { getCurrentUser } from "@/lib/auth";
 import { canEditSubdomainQuestions } from "@/lib/permissions";
 import { isRealSubdomain } from "@/lib/validation";
+import { getRecruitmentStatus } from "@/lib/recruitment-window";
 import type { QuestionDef } from "@/types";
 
 export async function GET(req: NextRequest) {
@@ -30,6 +31,16 @@ export async function PUT(req: NextRequest) {
   }
   if (!canEditSubdomainQuestions(user, subdomain)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  // Locked the moment recruitment opens — every applicant needs to see the
+  // same questions for the whole cycle, and stale answers must stay
+  // meaningful. Editable again automatically once the window resets for a
+  // future cycle (status goes back to "before").
+  if (getRecruitmentStatus() !== "before") {
+    return NextResponse.json(
+      { error: "Questions are locked once recruitment has started — nothing can change mid-cycle." },
+      { status: 403 }
+    );
   }
 
   const rawQuestions = body.questions;

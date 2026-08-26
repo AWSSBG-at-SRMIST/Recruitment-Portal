@@ -37,7 +37,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Applications are not currently open." }, { status: 403 });
     }
 
-    if (!(await checkRateLimit(`chat:${getClientIp(req)}`, 60, 10 * 60))) {
+    // Same shared-campus-IP reasoning as the other routes — many concurrent
+    // Nova conversations from the same WiFi easily add up past a low ceiling.
+    if (!(await checkRateLimit(`chat:${getClientIp(req)}`, 200, 10 * 60))) {
       return NextResponse.json({ error: "Too many messages. Please slow down." }, { status: 429 });
     }
 

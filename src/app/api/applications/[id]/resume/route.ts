@@ -15,6 +15,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const application = await repo.getApplication(id);
   if (!application) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!canViewApplication(user, application)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!application.resumeFileRef) return NextResponse.json({ error: "No resume submitted" }, { status: 404 });
 
   const file = await repo.getResumeFile(application.resumeFileRef);
   if (!file) return NextResponse.json({ error: "Resume file missing" }, { status: 404 });

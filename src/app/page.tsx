@@ -46,10 +46,10 @@ export default async function LandingPage() {
 
   const heroSubtext =
     status === "open"
-      ? "Chat with Nova, our recruitment chatbot, to apply in a few minutes — no static form. Watch the video below to see what we're building first."
+      ? "Chat with Nova, our recruitment chatbot, to apply in a few minutes — no static form."
       : status === "before"
-        ? `Applications open ${formatIst(opensAt)} IST. Watch the video below to see what we're building while you wait.`
-        : `This recruitment cycle closed ${formatIst(closesAt)} IST. Watch the video below to see what we're building, and follow us for the next cycle.`;
+        ? `Applications open ${formatIst(opensAt)} IST.`
+        : `This recruitment cycle closed ${formatIst(closesAt)} IST. Follow us for the next cycle.`;
 
   return (
     <div className="relative flex min-h-screen flex-col">
@@ -90,7 +90,7 @@ export default async function LandingPage() {
         </section>
 
         {/* Info cards */}
-        <section className="mx-auto max-w-container-max px-margin-mobile pb-14 md:px-margin-desktop">
+        <section className="mx-auto max-w-container-max px-margin-mobile pb-20 md:px-margin-desktop">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="border-2 border-on-surface/10 bg-surface-container-lowest p-5">
               <Users className="mb-3 h-5 w-5 text-primary" />
@@ -160,43 +160,6 @@ export default async function LandingPage() {
               </Link>
             </div>
           </div>
-        </section>
-
-        {/* Video */}
-        <section className="mx-auto max-w-container-max px-margin-mobile pb-20 md:px-margin-desktop">
-          <p className="mb-4 text-xs uppercase tracking-[0.3em] text-primary">Club Overview</p>
-          <div className="relative mx-auto max-w-4xl">
-            <div className="pointer-events-none absolute -top-2 -left-2 z-10 h-5 w-5 border-l-2 border-t-2 border-primary" />
-            <div className="pointer-events-none absolute -top-2 -right-2 z-10 h-5 w-5 border-r-2 border-t-2 border-primary" />
-            <div className="pointer-events-none absolute -bottom-2 -left-2 z-10 h-5 w-5 border-b-2 border-l-2 border-primary" />
-            <div className="pointer-events-none absolute -bottom-2 -right-2 z-10 h-5 w-5 border-b-2 border-r-2 border-primary" />
-
-            <div className="overflow-hidden border-2 border-primary/25 bg-surface-container-lowest card-shadow">
-              {/* Player chrome — gives the light Drive thumbnail somewhere to
-                  sit instead of butting straight against the dark page. */}
-              <div className="flex items-center gap-2 border-b-2 border-on-surface/10 bg-surface-container px-4 py-2.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-primary/60" />
-                <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
-                <span className="h-2.5 w-2.5 rounded-full bg-primary/20" />
-                <span className="ml-2 text-[10px] uppercase tracking-[0.2em] text-on-surface-variant">
-                  Inside AWS SBG at SRMIST
-                </span>
-              </div>
-              <div className="bg-brand-dark p-3 sm:p-5">
-                <div className="relative w-full overflow-hidden" style={{ paddingBottom: "56.25%" }}>
-                  <iframe
-                    src="https://drive.google.com/file/d/1Vuqk1fP4r13lrJrwrMdXkHdII6olxHXk/preview"
-                    className="absolute inset-0 h-full w-full"
-                    allow="autoplay"
-                    title="What is AWS SBG at SRMIST?"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          <p className="mx-auto mt-3 max-w-4xl text-[10px] uppercase tracking-[0.25em] text-on-surface-variant/50">
-            What is AWS SBG at SRMIST? — Club Overview
-          </p>
         </section>
       </main>
 

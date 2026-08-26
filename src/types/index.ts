@@ -93,12 +93,22 @@ export interface Application {
   dob: string | null; // optional
   domain: Domain;
   subdomain: Subdomain;
-  resumeFileRef: string;
+  // Optional for 1st years, mandatory for 2nd years — null means not submitted.
+  resumeFileRef: string | null;
   portfolioUrl: string | null;
   linkedin: string;
   githubUsername: string | null;
   leetcodeUsername: string | null;
   awsCertLinks: string[]; // 0-3 optional AWS certification links (Credly/AWS)
+  // Optional, self-reported "follow us" nudge — not scored. A username is
+  // proof of the follow, so it's only present when the candidate actually
+  // checked that box. LinkedIn has no meaningful per-candidate username for
+  // a company-page follow, so it's just a checkbox.
+  instagramUsername: string | null;
+  meetupUsername: string | null;
+  followedLinkedin: boolean;
+  // Mandatory — the applicant must confirm before they can submit.
+  joinedRecruitmentGroup: boolean;
   questionnaire: Record<string, string>;
   status: ApplicationStatus;
   aiScore: number | null;

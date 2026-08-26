@@ -19,7 +19,7 @@ export interface EvaluationInput {
   domain: Domain;
   subdomain: Subdomain;
   year: string; // "1st Year" | "2nd Year" — calibrates how strictly experience is judged
-  resumeBuffer: Buffer;
+  resumeBuffer: Buffer | null; // null if not submitted (optional for 1st years)
   questionnaire: Record<string, string>;
   portfolioUrl: string | null;
   githubUsername: string | null;
@@ -96,6 +96,10 @@ function buildPrompt(
 
   const axes = DOMAIN_COMPETENCY_AXES[input.domain];
 
+  const resumeBlock = resumeText.trim()
+    ? `RESUME (extracted text, may be noisy):\n"""\n${resumeText.slice(0, 6000)}\n"""`
+    : "RESUME: Not submitted — resume is optional for 1st years. Judge this candidate on their questionnaire answers alone; do not penalise the missing resume beyond what the rubric already accounts for.";
+
   const yearCalibration =
     input.year === "1st Year"
       ? "This candidate is a 1st Year — they've had very little time to build experience. Judge them more on potential, learning velocity, and genuine engagement than on the depth/breadth a 2nd year would show. Do not penalise thin experience just because it's thin; penalise vague, low-effort, or copy-pasted answers regardless of year."
@@ -110,10 +114,7 @@ Calibrate your expectations by year as above, but always score what they actuall
 EVALUATION RUBRIC FOR THIS SUBDOMAIN:
 ${rubric}
 
-RESUME (extracted text, may be noisy):
-"""
-${resumeText.slice(0, 6000)}
-"""
+${resumeBlock}
 
 QUESTIONNAIRE RESPONSES:
 ${qaBlock}${portfolioBlock}${certBlock}${signalBlock}
@@ -196,9 +197,12 @@ function heuristicEvaluation(
   if (resumeText.trim().length > 500) {
     score += 6;
     strengths.push("Substantive resume content");
-  } else {
+  } else if (input.year === "2nd Year") {
+    concerns.push("Resume text is thin or unreadable");
+  } else if (input.resumeBuffer) {
     concerns.push("Resume text is thin or unreadable");
   }
+  // else: 1st year with no resume at all — resume is optional for them, not a concern.
 
   if (input.portfolioUrl) {
     score += 6;
@@ -258,7 +262,17 @@ function heuristicEvaluation(
 }
 
 export async function evaluateApplication(input: EvaluationInput): Promise<EvaluationResult> {
-  const parsed = await parseResume(input.resumeBuffer);
+  const parsed = input.resumeBuffer
+    ? await parseResume(input.resumeBuffer)
+    : {
+        rawText: "",
+        email: null,
+        phone: null,
+        githubUsername: null,
+        leetcodeUsername: null,
+        skills: [] as string[],
+        parseError: "No resume submitted",
+      };
   const signals = await gatherTechnicalSignals(
     input,
     parsed.skills,

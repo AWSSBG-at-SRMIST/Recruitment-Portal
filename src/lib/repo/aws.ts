@@ -105,6 +105,7 @@ export const awsRepo: Repo = {
 
   async deleteApplication(applicationId, resumeFileRef) {
     await db.send(new DeleteCommand({ TableName: TABLE.APPLICATIONS, Key: { applicationId } }));
+    if (!resumeFileRef) return;
     try {
       await s3.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: resumeFileRef }));
     } catch (err) {

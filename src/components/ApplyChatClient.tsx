@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
-import { Upload, CheckCircle2, Send, Bot, FileText, Lock } from "lucide-react";
+import { Upload, CheckCircle2, Send, Bot, FileText, Lock, Sparkles } from "lucide-react";
+import { SiInstagram, SiMeetup, SiWhatsapp } from "react-icons/si";
+import { FaLinkedin } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +43,14 @@ const markdownComponents = {
 function Req() {
   return <span className="text-red-400"> *</span>;
 }
+
+// Club's own social pages to follow — GitHub isn't here since that's already
+// a required field above, and WhatsApp is skipped since joining a group chat
+// has no per-candidate username to collect as proof.
+const INSTAGRAM_URL = "https://www.instagram.com/awssbg.at.srmist/";
+const LINKEDIN_URL = "https://www.linkedin.com/company/awssbg-at-srmist";
+const MEETUP_URL = "https://www.meetup.com/awssbg-at-srmist/";
+const RECRUITMENT_GROUP_URL = "https://chat.whatsapp.com/GGQ5IJoMMdq5Ct9wkW0nFf";
 
 function SectionCard({
   step,
@@ -85,6 +95,12 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
   const [awsCertLink2, setAwsCertLink2] = useState("");
   const [awsCertLink3, setAwsCertLink3] = useState("");
   const [resume, setResume] = useState<File | null>(null);
+  const [instagramChecked, setInstagramChecked] = useState(false);
+  const [instagramUsername, setInstagramUsername] = useState("");
+  const [meetupChecked, setMeetupChecked] = useState(false);
+  const [meetupUsername, setMeetupUsername] = useState("");
+  const [followedLinkedin, setFollowedLinkedin] = useState(false);
+  const [joinedRecruitmentGroup, setJoinedRecruitmentGroup] = useState(false);
 
   // ── Subdomain questionnaire (Nova chat) ────────────────────────────────
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -170,7 +186,14 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
     !!subdomain &&
     !!linkedin.trim() &&
     !!githubLink.trim();
-  const canSubmit = identityValid && readyToSubmit && !!resume && !submitting;
+  // The "Follow Us" section is entirely optional, but a checked box needs
+  // its username as proof — can't submit half-filled.
+  const socialsValid =
+    (!instagramChecked || !!instagramUsername.trim()) && (!meetupChecked || !!meetupUsername.trim());
+  // Resume is optional for 1st years, mandatory for 2nd years.
+  const resumeValid = year !== "2nd Year" || !!resume;
+  const canSubmit =
+    identityValid && socialsValid && resumeValid && readyToSubmit && joinedRecruitmentGroup && !submitting;
 
   async function submitApplication() {
     setSubmitting(true);
@@ -193,6 +216,12 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
         if (l.trim()) form.set(`awsCertLink${i + 1}`, l.trim());
       });
       for (const [id, ans] of Object.entries(questionnaire)) form.set(`q_${id}`, ans);
+      form.set("instagramFollowed", String(instagramChecked));
+      if (instagramChecked) form.set("instagramUsername", instagramUsername.trim());
+      form.set("meetupFollowed", String(meetupChecked));
+      if (meetupChecked) form.set("meetupUsername", meetupUsername.trim());
+      form.set("followedLinkedin", String(followedLinkedin));
+      form.set("joinedRecruitmentGroup", String(joinedRecruitmentGroup));
       if (resume) form.set("resume", resume);
 
       const res = await fetch("/api/applications", { method: "POST", body: form });
@@ -253,7 +282,7 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
                 id="regNo"
                 value={regNo}
                 onChange={(e) => setRegNo(e.target.value)}
-                placeholder="RA2311003011411"
+                placeholder="RA2511003011411 (2025/2026 batch only)"
               />
             </div>
             <div className="space-y-1.5">
@@ -527,7 +556,15 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
           )}
         </SectionCard>
 
-        <SectionCard step={4} title="Resume">
+        <SectionCard
+          step={4}
+          title="Resume"
+          subtitle={
+            year === "2nd Year"
+              ? "Required for 2nd years."
+              : "Optional for 1st years — attach one if you have it."
+          }
+        >
           <label className="flex cursor-pointer items-center gap-2 border-2 border-dashed border-on-surface/20 p-3 text-sm hover:bg-surface-container">
             <Upload className="h-4 w-4 shrink-0 text-primary" />
             <span className="truncate text-on-surface-variant">{resume ? resume.name : "Click to attach (PDF)"}</span>
@@ -545,6 +582,131 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
           )}
         </SectionCard>
 
+        <div className="border-2 border-dashed border-primary/30 bg-surface-container-lowest p-5 card-shadow sm:p-6">
+          <div className="flex items-center gap-3">
+            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
+            <p className="font-display text-sm font-bold uppercase tracking-wide text-on-surface">
+              Follow Us <span className="normal-case text-on-surface-variant">(totally optional)</span>
+            </p>
+          </div>
+          <p className="mt-1 pl-7 text-xs text-on-surface-variant">
+            Follow us on our socials for bonus points! 😄
+          </p>
+
+          <div className="mt-4 space-y-4">
+            {/* Instagram */}
+            <div>
+              <label className="flex cursor-pointer items-start gap-2.5 text-sm text-on-surface">
+                <input
+                  type="checkbox"
+                  checked={instagramChecked}
+                  onChange={(e) => setInstagramChecked(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                />
+                <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
+                  <SiInstagram className="h-4 w-4 shrink-0 text-primary" /> I follow{" "}
+                  <a
+                    href={INSTAGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    @awssbg.at.srmist
+                  </a>{" "}
+                  on Instagram
+                </span>
+              </label>
+              {instagramChecked && (
+                <Input
+                  value={instagramUsername}
+                  onChange={(e) => setInstagramUsername(e.target.value)}
+                  placeholder="Your Instagram username"
+                  className="mt-2 ml-6 max-w-xs"
+                />
+              )}
+            </div>
+
+            {/* Meetup */}
+            <div>
+              <label className="flex cursor-pointer items-start gap-2.5 text-sm text-on-surface">
+                <input
+                  type="checkbox"
+                  checked={meetupChecked}
+                  onChange={(e) => setMeetupChecked(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+                />
+                <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
+                  <SiMeetup className="h-4 w-4 shrink-0 text-primary" /> I&apos;ve joined our{" "}
+                  <a
+                    href={MEETUP_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Meetup group
+                  </a>
+                </span>
+              </label>
+              {meetupChecked && (
+                <Input
+                  value={meetupUsername}
+                  onChange={(e) => setMeetupUsername(e.target.value)}
+                  placeholder="Your Meetup username"
+                  className="mt-2 ml-6 max-w-xs"
+                />
+              )}
+            </div>
+
+            {/* LinkedIn — no per-candidate username to collect for a company-page follow */}
+            <label className="flex cursor-pointer items-start gap-2.5 text-sm text-on-surface">
+              <input
+                type="checkbox"
+                checked={followedLinkedin}
+                onChange={(e) => setFollowedLinkedin(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+              />
+              <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1">
+                <FaLinkedin className="h-4 w-4 shrink-0 text-primary" /> I follow AWS SBG&apos;s{" "}
+                <a
+                  href={LINKEDIN_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  LinkedIn page
+                </a>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div className="border-2 border-primary bg-primary/5 p-5 card-shadow sm:p-6">
+          <p className="font-display text-sm font-bold uppercase tracking-wide text-on-surface">
+            Join Recruitments Group
+            <Req />
+          </p>
+          <a
+            href={RECRUITMENT_GROUP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 flex flex-wrap items-center gap-2 text-sm font-bold text-primary hover:underline"
+          >
+            <SiWhatsapp className="h-4 w-4 shrink-0" /> Join the Recruitments WhatsApp group
+          </a>
+          <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-sm text-on-surface">
+            <input
+              type="checkbox"
+              checked={joinedRecruitmentGroup}
+              onChange={(e) => setJoinedRecruitmentGroup(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
+            />
+            I&apos;ve joined the Recruitments WhatsApp group. (Required to submit)
+          </label>
+        </div>
+
         {error && <p className="text-center text-sm text-red-400">{error}</p>}
 
         <Button variant="gradient" className="w-full" disabled={!canSubmit} onClick={submitApplication}>
@@ -555,13 +717,23 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
             Fill in every required field above (marked with *) to submit.
           </p>
         )}
-        {identityValid && !readyToSubmit && (
+        {identityValid && !socialsValid && (
+          <p className="text-center text-xs text-amber-400">
+            Add your username for any &quot;Follow Us&quot; box you checked, or uncheck it.
+          </p>
+        )}
+        {identityValid && socialsValid && resumeValid && !readyToSubmit && (
           <p className="text-center text-xs text-on-surface-variant">
             Finish chatting with Nova above to unlock submit.
           </p>
         )}
-        {identityValid && readyToSubmit && !resume && (
-          <p className="text-center text-xs text-amber-400">Attach your resume PDF to submit.</p>
+        {identityValid && socialsValid && !resumeValid && (
+          <p className="text-center text-xs text-amber-400">Attach your resume PDF to submit (required for 2nd years).</p>
+        )}
+        {identityValid && socialsValid && resumeValid && readyToSubmit && !joinedRecruitmentGroup && (
+          <p className="text-center text-xs text-amber-400">
+            Join the Recruitments WhatsApp group and check the box above to submit.
+          </p>
         )}
       </div>
     </div>

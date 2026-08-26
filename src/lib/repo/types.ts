@@ -22,12 +22,16 @@ export interface NewApplication {
   dob: string | null;
   domain: Domain;
   subdomain: Subdomain;
-  resumeFileRef: string;
+  resumeFileRef: string | null;
   portfolioUrl: string | null;
   linkedin: string;
   githubUsername: string | null;
   leetcodeUsername: string | null;
   awsCertLinks: string[];
+  instagramUsername: string | null;
+  meetupUsername: string | null;
+  followedLinkedin: boolean;
+  joinedRecruitmentGroup: boolean;
   questionnaire: Record<string, string>;
   appliedAt: number;
 }
@@ -50,7 +54,7 @@ export interface Repo {
     applicationId: string,
     result: { aiScore: number; aiEvaluation: AIEvaluation; verifiedSignals: VerifiedSignals | null }
   ): Promise<void>;
-  deleteApplication(applicationId: string, resumeFileRef: string): Promise<void>;
+  deleteApplication(applicationId: string, resumeFileRef: string | null): Promise<void>;
 
   // Recruiter/session identity is real member data (see @/lib/members) — the
   // Repo layer only owns OTP/session/rate-limit storage, not who's allowed

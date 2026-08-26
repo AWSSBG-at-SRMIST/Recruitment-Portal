@@ -39,7 +39,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Applications are not currently open." }, { status: 403 });
     }
 
-    if (!(await checkRateLimit(`apply:${getClientIp(req)}`, 8, 10 * 60))) {
+    // Same shared-campus-IP reasoning as the auth routes — many students
+    // submitting near the deadline from the same WiFi shouldn't collide.
+    if (!(await checkRateLimit(`apply:${getClientIp(req)}`, 30, 10 * 60))) {
       return NextResponse.json({ error: "Too many submissions. Please try again later." }, { status: 429 });
     }
 
@@ -72,6 +74,29 @@ export async function POST(req: NextRequest) {
       .filter((l): l is string => !!l)
       .slice(0, 3);
 
+    // Self-reported, optional "follow us" nudge — not part of scoring. Each
+    // checkbox is independent; a username is only required if its own
+    // checkbox is checked (it's the proof of the follow).
+    const stripHandle = (v: string) => v.replace(/^@/, "") || null;
+    const instagramChecked = get("instagramFollowed") === "true";
+    const instagramUsername = instagramChecked ? stripHandle(get("instagramUsername")) : null;
+    const meetupChecked = get("meetupFollowed") === "true";
+    const meetupUsername = meetupChecked ? stripHandle(get("meetupUsername")) : null;
+    const followedLinkedin = get("followedLinkedin") === "true";
+
+    if (instagramChecked && !instagramUsername) {
+      return NextResponse.json({ error: "Enter your Instagram username, or uncheck that box." }, { status: 400 });
+    }
+    if (meetupChecked && !meetupUsername) {
+      return NextResponse.json({ error: "Enter your Meetup username, or uncheck that box." }, { status: 400 });
+    }
+
+    // Mandatory — cannot submit without confirming this.
+    const joinedRecruitmentGroup = get("joinedRecruitmentGroup") === "true";
+    if (!joinedRecruitmentGroup) {
+      return NextResponse.json({ error: "You must join the Recruitments WhatsApp group to submit." }, { status: 400 });
+    }
+
     if (!name || !regNo || !gender || !year || !degree || !phone || !collegeEmail || !personalEmail) {
       return NextResponse.json({ error: "All required identity fields must be filled." }, { status: 400 });
     }
@@ -82,7 +107,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "A valid personal email is required." }, { status: 400 });
     }
     if (!isValidRegNo(regNo)) {
-      return NextResponse.json({ error: "Registration number must look like RA2311003011411." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Registration number must be a valid RA25... or RA26... number (2025/2026 batch only)." },
+        { status: 400 }
+      );
     }
     if (!isValidGender(gender)) {
       return NextResponse.json({ error: "Invalid gender." }, { status: 400 });
@@ -112,21 +140,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "A valid GitHub profile link is required." }, { status: 400 });
     }
 
-    const resume = form.get("resume");
-    if (!(resume instanceof File) || resume.size === 0) {
-      return NextResponse.json({ error: "A resume PDF is required." }, { status: 400 });
+    // Resume is optional for 1st years, mandatory for 2nd years.
+    const resumeField = form.get("resume");
+    const resumeProvided = resumeField instanceof File && resumeField.size > 0;
+    if (year === "2nd Year" && !resumeProvided) {
+      return NextResponse.json({ error: "A resume PDF is required for 2nd years." }, { status: 400 });
     }
-    if (resume.type !== "application/pdf") {
-      return NextResponse.json({ error: "Resume must be a PDF." }, { status: 400 });
-    }
-    if (resume.size > MAX_FILE_BYTES) {
-      return NextResponse.json({ error: "Resume exceeds the 10 MB limit." }, { status: 400 });
-    }
-    const buffer = Buffer.from(await resume.arrayBuffer());
-    // The browser-supplied Content-Type above is client controlled — a
-    // renamed non-PDF would sail through that check alone.
-    if (!isPdfBuffer(buffer)) {
-      return NextResponse.json({ error: "That file isn't a valid PDF." }, { status: 400 });
+
+    let buffer: Buffer | null = null;
+    if (resumeProvided) {
+      const resume = resumeField as File;
+      if (resume.type !== "application/pdf") {
+        return NextResponse.json({ error: "Resume must be a PDF." }, { status: 400 });
+      }
+      if (resume.size > MAX_FILE_BYTES) {
+        return NextResponse.json({ error: "Resume exceeds the 10 MB limit." }, { status: 400 });
+      }
+      buffer = Buffer.from(await resume.arrayBuffer());
+      // The browser-supplied Content-Type above is client controlled — a
+      // renamed non-PDF would sail through that check alone.
+      if (!isPdfBuffer(buffer)) {
+        return NextResponse.json({ error: "That file isn't a valid PDF." }, { status: 400 });
+      }
     }
 
     // One application per email — resubmitting isn't supported yet, so fail
@@ -148,7 +183,7 @@ export async function POST(req: NextRequest) {
     }
 
     const applicationId = nanoid(12);
-    const resumeFileRef = await repo.saveResumeFile(applicationId, buffer);
+    const resumeFileRef = buffer ? await repo.saveResumeFile(applicationId, buffer) : null;
 
     await repo.createApplication({
       applicationId,
@@ -169,6 +204,10 @@ export async function POST(req: NextRequest) {
       githubUsername,
       leetcodeUsername,
       awsCertLinks,
+      instagramUsername,
+      meetupUsername,
+      followedLinkedin,
+      joinedRecruitmentGroup,
       questionnaire,
       appliedAt: Math.floor(Date.now() / 1000),
     });
