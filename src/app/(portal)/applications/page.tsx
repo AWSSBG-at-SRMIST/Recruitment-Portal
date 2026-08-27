@@ -7,11 +7,13 @@ import { getCurrentUser } from "@/lib/auth";
 import { getVisibilityScope } from "@/lib/permissions";
 import { ApplicationsFilterBar } from "@/components/ApplicationsFilterBar";
 import { StatusBadge, ScorePill } from "@/components/StatusBadge";
-import { isValidDomain } from "@/lib/validation";
-import type { Application, ApplicationStatus, Subdomain } from "@/types";
+import { isValidDomain, isValidYear } from "@/lib/validation";
+import type { Application, ApplicationStatus, Subdomain, Year } from "@/types";
 
 export const metadata: Metadata = { title: "Applications" };
 export const dynamic = "force-dynamic";
+
+const PAGE_SIZE = 20;
 
 function sortApplications(apps: Application[], sort: string): Application[] {
   const copy = [...apps];
@@ -24,7 +26,7 @@ function sortApplications(apps: Application[], sort: string): Application[] {
 export default async function ApplicationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ domain?: string; subdomain?: string; status?: string; sort?: string }>;
+  searchParams: Promise<{ domain?: string; subdomain?: string; status?: string; year?: string; sort?: string; page?: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
@@ -46,14 +48,31 @@ export default async function ApplicationsPage({
   }
 
   if (sp.status) filter.status = sp.status as ApplicationStatus;
+  if (sp.year && isValidYear(sp.year)) filter.year = sp.year as Year;
 
-  const applications = sortApplications(await repo.listApplications(filter), sp.sort ?? "score");
+  const allApplications = sortApplications(await repo.listApplications(filter), sp.sort ?? "score");
+
+  const totalPages = Math.max(1, Math.ceil(allApplications.length / PAGE_SIZE));
+  const currentPage = Math.min(Math.max(1, Number(sp.page) || 1), totalPages);
+  const applications = allApplications.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const pageHref = (page: number) => {
+    const next = new URLSearchParams();
+    if (sp.domain) next.set("domain", sp.domain);
+    if (sp.subdomain) next.set("subdomain", sp.subdomain);
+    if (sp.status) next.set("status", sp.status);
+    if (sp.year) next.set("year", sp.year);
+    if (sp.sort) next.set("sort", sp.sort);
+    if (page > 1) next.set("page", String(page));
+    const qs = next.toString();
+    return qs ? `/applications?${qs}` : "/applications";
+  };
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl font-bold text-on-surface">Applications</h1>
-        <p className="mt-1 text-on-surface-variant">{applications.length} matching applications.</p>
+        <p className="mt-1 text-on-surface-variant">{allApplications.length} matching applications.</p>
       </div>
 
       <ApplicationsFilterBar />
@@ -104,6 +123,32 @@ export default async function ApplicationsPage({
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm text-on-surface-variant">
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+          <div className="flex gap-2">
+            {currentPage > 1 && (
+              <Link
+                href={pageHref(currentPage - 1)}
+                className="border-2 border-on-surface/10 bg-surface-container-lowest px-3 py-1.5 font-medium text-on-surface hover:bg-surface-container"
+              >
+                Previous
+              </Link>
+            )}
+            {currentPage < totalPages && (
+              <Link
+                href={pageHref(currentPage + 1)}
+                className="border-2 border-on-surface/10 bg-surface-container-lowest px-3 py-1.5 font-medium text-on-surface hover:bg-surface-container"
+              >
+                Next
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

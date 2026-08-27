@@ -94,6 +94,7 @@ export const awsRepo: Repo = {
     if (filter.domain) items = items.filter((i) => i.domain === filter.domain);
     if (filter.subdomain) items = items.filter((i) => i.subdomain === filter.subdomain);
     if (filter.status) items = items.filter((i) => i.status === filter.status);
+    if (filter.year) items = items.filter((i) => i.year === filter.year);
     return items.sort((a, b) => b.appliedAt - a.appliedAt);
   },
 

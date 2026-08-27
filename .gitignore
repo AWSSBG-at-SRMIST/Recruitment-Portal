@@ -40,3 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env.local
+
+# local-only generated data (candidate emails/status exports) — never commit
+/local/
+
+# internal recruitment ops scripts (applicant exports, mass-email sender) —
+# not meant for the public repo
+/scripts/

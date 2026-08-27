@@ -7,6 +7,7 @@ import {
   ALL_DOMAINS,
   APPLICATION_STATUSES,
   DOMAIN_SUBDOMAINS,
+  YEAR_OPTIONS,
   type Domain,
 } from "@/types";
 
@@ -19,6 +20,7 @@ export function ApplicationsFilterBar() {
   const domain = (params.get("domain") as Domain | null) ?? "";
   const subdomain = params.get("subdomain") ?? "";
   const status = params.get("status") ?? "";
+  const year = params.get("year") ?? "";
   const sort = params.get("sort") ?? "score";
 
   function setParam(key: string, value: string) {
@@ -27,6 +29,9 @@ export function ApplicationsFilterBar() {
     else next.set(key, value);
     // Changing domain invalidates a previously chosen subdomain.
     if (key === "domain") next.delete("subdomain");
+    // Any filter/sort change resets pagination — the old page number may no
+    // longer exist under the new result set.
+    next.delete("page");
     router.push(`/applications?${next.toString()}`);
   }
 
@@ -54,6 +59,12 @@ export function ApplicationsFilterBar() {
         options={[{ v: ANY, l: "All statuses" }, ...APPLICATION_STATUSES.map((s) => ({ v: s, l: s }))]}
       />
       <FilterSelect
+        label="Year"
+        value={year || ANY}
+        onChange={(v) => setParam("year", v)}
+        options={[{ v: ANY, l: "All years" }, ...YEAR_OPTIONS.map((y) => ({ v: y, l: y }))]}
+      />
+      <FilterSelect
         label="Sort by"
         value={sort}
         onChange={(v) => setParam("sort", v)}
@@ -63,7 +74,7 @@ export function ApplicationsFilterBar() {
           { v: "name", l: "Name (A→Z)" },
         ]}
       />
-      {(domain || subdomain || status) && (
+      {(domain || subdomain || status || year) && (
         <Button variant="ghost" size="sm" onClick={() => router.push("/applications")}>
           Clear
         </Button>

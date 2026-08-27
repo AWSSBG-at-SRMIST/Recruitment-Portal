@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "export:applicant-status": "node scripts/export-applicant-status.mjs",
+    "send:pending-reminders": "node scripts/send-pending-reminders.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.1098.0",

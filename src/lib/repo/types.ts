@@ -7,6 +7,7 @@ import type {
   SessionUser,
   AIEvaluation,
   VerifiedSignals,
+  Year,
 } from "@/types";
 
 export interface NewApplication {
@@ -40,6 +41,7 @@ export interface ApplicationFilter {
   domain?: Domain;
   subdomain?: Subdomain;
   status?: ApplicationStatus;
+  year?: Year;
 }
 
 export type OTPVerifyResult = "valid" | "invalid" | "expired" | "locked";
