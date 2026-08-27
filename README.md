@@ -5,7 +5,7 @@
 <h1 align="center">AWSSBG Recruitment Portal</h1>
 
 <p align="center">
-  Recruitment portal for the AWS Student Builder Group (AWSSBG) at SRMIST — candidates fill a short form and chat with Nova, our AI recruitment chatbot, for the rest.
+  Recruitment portal for the AWS Student Builder Group (AWS SBG) at SRMIST — candidates fill out a short application form to apply.
 </p>
 
 <p align="center">

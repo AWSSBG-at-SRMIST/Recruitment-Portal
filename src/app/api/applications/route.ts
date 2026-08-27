@@ -54,9 +54,9 @@ export async function POST(req: NextRequest) {
     const year = get("year");
     const degree = get("degree");
     const phone = get("phone");
-    // The OTP-verified session email is the source of truth, not whatever
-    // Nova's conversation happened to extract — prevents submitting under a
-    // different identity than the one that logged in.
+    // The OTP-verified session email is the source of truth, never a value
+    // from the request body — prevents submitting under a different
+    // identity than the one that logged in.
     const collegeEmail = user.email;
     const personalEmail = get("personalEmail").toLowerCase();
     const dob = get("dob") || null;
@@ -164,10 +164,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // One application per email — resubmitting isn't supported yet, so fail
-    // clearly instead of silently creating a second entry.
-    const existing = await repo.getApplicationByEmail(collegeEmail);
-    if (existing) {
+    // One application per email — resubmitting isn't supported yet. This is
+    // an atomic conditional write, not a scan-then-write check, so two
+    // near-simultaneous submissions from the same email can't both slip
+    // through (a real risk under concurrent traffic, unlike a plain lookup).
+    const claimed = await repo.claimApplicationEmail(collegeEmail);
+    if (!claimed) {
       return NextResponse.json(
         { error: "You've already submitted an application with this email." },
         { status: 409 }
@@ -183,34 +185,42 @@ export async function POST(req: NextRequest) {
     }
 
     const applicationId = nanoid(12);
-    const resumeFileRef = buffer ? await repo.saveResumeFile(applicationId, buffer) : null;
+    try {
+      const resumeFileRef = buffer ? await repo.saveResumeFile(applicationId, buffer) : null;
 
-    await repo.createApplication({
-      applicationId,
-      name,
-      regNo,
-      gender,
-      year,
-      degree,
-      phone,
-      collegeEmail,
-      personalEmail,
-      dob,
-      domain: domain as Domain,
-      subdomain: subdomain as Subdomain,
-      resumeFileRef,
-      portfolioUrl,
-      linkedin,
-      githubUsername,
-      leetcodeUsername,
-      awsCertLinks,
-      instagramUsername,
-      meetupUsername,
-      followedLinkedin,
-      joinedRecruitmentGroup,
-      questionnaire,
-      appliedAt: Math.floor(Date.now() / 1000),
-    });
+      await repo.createApplication({
+        applicationId,
+        name,
+        regNo,
+        gender,
+        year,
+        degree,
+        phone,
+        collegeEmail,
+        personalEmail,
+        dob,
+        domain: domain as Domain,
+        subdomain: subdomain as Subdomain,
+        resumeFileRef,
+        portfolioUrl,
+        linkedin,
+        githubUsername,
+        leetcodeUsername,
+        awsCertLinks,
+        instagramUsername,
+        meetupUsername,
+        followedLinkedin,
+        joinedRecruitmentGroup,
+        questionnaire,
+        appliedAt: Math.floor(Date.now() / 1000),
+      });
+    } catch (err) {
+      // The application never actually got created — free up the email
+      // claim so a genuine failure doesn't permanently lock the applicant
+      // out of ever submitting.
+      await repo.releaseApplicationEmail(collegeEmail).catch(() => {});
+      throw err;
+    }
 
     // Evaluate synchronously so the recruiter sees a score immediately. Failure
     // here must not lose the application — it's already persisted above.

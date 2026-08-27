@@ -46,7 +46,7 @@ export default async function LandingPage() {
 
   const heroSubtext =
     status === "open"
-      ? "Chat with Nova, our recruitment chatbot, to apply in a few minutes — no static form."
+      ? "Fill out the form in a few minutes and you're done."
       : status === "before"
         ? `Applications open ${formatIst(opensAt)} IST.`
         : `This recruitment cycle closed ${formatIst(closesAt)} IST. Follow us for the next cycle.`;
@@ -147,7 +147,7 @@ export default async function LandingPage() {
               </p>
               <p className="mt-1 text-xs text-on-surface-variant">
                 {status === "open"
-                  ? "Pick a domain, chat with Nova, attach your resume — done in a few minutes."
+                  ? "Pick a domain, answer a few questions, attach your resume — done in a few minutes."
                   : status === "before"
                     ? `Opens ${formatIst(opensAt)} IST.`
                     : `Closed ${formatIst(closesAt)} IST. See you next cycle.`}

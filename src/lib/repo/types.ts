@@ -48,6 +48,14 @@ export interface Repo {
   createApplication(app: NewApplication): Promise<Application>;
   getApplication(applicationId: string): Promise<Application | null>;
   getApplicationByEmail(collegeEmail: string): Promise<Application | null>;
+  // Atomically reserves an email for one application — a plain "scan then
+  // write" duplicate check has a race window under concurrent submissions
+  // (two requests from the same email can both pass the check before either
+  // write lands). Returns false if the email is already claimed. Call
+  // releaseApplicationEmail if the submission fails after claiming, so a
+  // genuine failure doesn't permanently lock the applicant out.
+  claimApplicationEmail(collegeEmail: string): Promise<boolean>;
+  releaseApplicationEmail(collegeEmail: string): Promise<void>;
   listApplications(filter?: ApplicationFilter): Promise<Application[]>;
   updateApplicationStatus(applicationId: string, status: ApplicationStatus): Promise<void>;
   updateApplicationEvaluation(

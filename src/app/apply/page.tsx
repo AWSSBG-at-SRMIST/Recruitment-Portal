@@ -34,7 +34,7 @@ export default async function ApplyPage() {
           </h1>
           <p className="mb-6 text-on-surface-variant">
             {status === "before"
-              ? `This recruitment cycle opens ${formatIst(opensAt)} IST — come back then to chat with Nova and apply.`
+              ? `This recruitment cycle opens ${formatIst(opensAt)} IST — come back then to apply.`
               : `This recruitment cycle closed ${formatIst(closesAt)} IST. Thanks for your interest — follow us for the next cycle.`}
           </p>
           <Link href="/">

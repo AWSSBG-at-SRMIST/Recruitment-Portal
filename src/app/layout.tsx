@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     default: "Recruitment | AWS SBG at SRMIST",
     template: "%s | AWS SBG at SRMIST",
   },
-  description: "Conversational recruitment chatbot for AWS Student Builder Group at SRMIST",
+  description: "Recruitment portal for AWS Student Builder Group at SRMIST",
 };
 
 export default function RootLayout({

@@ -132,7 +132,7 @@ export default async function DomainsPage() {
   const ctaLabel = status === "open" ? "Apply Now" : status === "before" ? "Opens Soon" : "Applications Closed";
   const ctaSubtext =
     status === "open"
-      ? "Pick a domain and subdomain, chat with Nova, attach your resume — done in a few minutes."
+      ? "Pick a domain and subdomain, answer a few questions, attach your resume — done in a few minutes."
       : status === "before"
         ? `Applications open ${formatIst(opensAt)} IST.`
         : `This recruitment cycle closed ${formatIst(closesAt)} IST. Follow us for the next cycle.`;

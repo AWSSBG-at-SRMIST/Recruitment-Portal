@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
-import { Upload, CheckCircle2, Send, Bot, FileText, Lock, Sparkles } from "lucide-react";
+import { Upload, CheckCircle2, FileText, Lock, Sparkles, Loader2 } from "lucide-react";
 import { SiInstagram, SiMeetup, SiWhatsapp } from "react-icons/si";
 import { FaLinkedin } from "react-icons/fa6";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CornerBrackets } from "@/components/ui/CornerBrackets";
@@ -19,26 +19,8 @@ import {
   GENDER_OPTIONS,
   type Domain,
   type Subdomain,
+  type QuestionDef,
 } from "@/types";
-import type { ChatMessage } from "@/lib/intake";
-
-// Compact overrides so Nova's markdown (bold, lists, paragraphs) reads well
-// inside a small chat bubble instead of the default block spacing.
-const markdownComponents = {
-  p: ({ children }: { children?: React.ReactNode }) => <p className="mb-2 last:mb-0">{children}</p>,
-  ul: ({ children }: { children?: React.ReactNode }) => (
-    <ul className="mb-2 list-disc space-y-0.5 pl-4 last:mb-0">{children}</ul>
-  ),
-  ol: ({ children }: { children?: React.ReactNode }) => (
-    <ol className="mb-2 list-decimal space-y-0.5 pl-4 last:mb-0">{children}</ol>
-  ),
-  strong: ({ children }: { children?: React.ReactNode }) => <strong className="font-bold">{children}</strong>,
-  a: ({ children, href }: { children?: React.ReactNode; href?: string }) => (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-      {children}
-    </a>
-  ),
-};
 
 function Req() {
   return <span className="text-red-400"> *</span>;
@@ -102,71 +84,47 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
   const [followedLinkedin, setFollowedLinkedin] = useState(false);
   const [joinedRecruitmentGroup, setJoinedRecruitmentGroup] = useState(false);
 
-  // ── Subdomain questionnaire (Nova chat) ────────────────────────────────
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // ── Subdomain questionnaire (plain form) ───────────────────────────────
+  const [questions, setQuestions] = useState<QuestionDef[]>([]);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
   const [questionnaire, setQuestionnaire] = useState<Record<string, string>>({});
-  const [totalQuestions, setTotalQuestions] = useState(0);
-  const [readyToSubmit, setReadyToSubmit] = useState(false);
-  const [input, setInput] = useState("");
-  const [thinking, setThinking] = useState(false);
-  const chatSubdomain = useRef<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Starting the questionnaire chat needs the subdomain — restart it fresh
+  // Fetching the subdomain's questions needs the subdomain — reload fresh
   // whenever the candidate changes their domain/subdomain choice.
   useEffect(() => {
-    if (!subdomain || chatSubdomain.current === subdomain) return;
-    chatSubdomain.current = subdomain;
-    setMessages([]);
+    if (!subdomain) return;
+    let cancelled = false;
+    // Standard cancelled-flag data-fetching effect (per React's own docs) —
+    // setting loading/reset state before the fetch starts is intentional.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setQuestionsLoading(true);
     setQuestionnaire({});
-    setTotalQuestions(0);
-    setReadyToSubmit(false);
-    void send([], {}, subdomain);
+    fetch(`/api/subdomain-questions?subdomain=${encodeURIComponent(subdomain)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        setQuestions(data.questions ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setError("Couldn't load this subdomain's questions. Please refresh and try again.");
+      })
+      .finally(() => {
+        if (!cancelled) setQuestionsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [subdomain]);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, thinking]);
+  const readyToSubmit =
+    questions.length > 0 && questions.every((q) => !!questionnaire[q.id]?.trim());
 
-  useEffect(() => {
-    if (!thinking && !submitting && !done && subdomain) inputRef.current?.focus();
-  }, [thinking, submitting, done, subdomain]);
-
-  async function send(history: ChatMessage[], known: Record<string, string>, sd: string) {
-    setThinking(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, questionnaire: known, subdomain: sd }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "The recruitment chatbot is unavailable.");
-      setMessages([...history, { role: "assistant", content: data.message }]);
-      setQuestionnaire(data.questionnaire ?? known);
-      setReadyToSubmit(!!data.readyToSubmit);
-      if (typeof data.totalQuestions === "number") setTotalQuestions(data.totalQuestions);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-    } finally {
-      setThinking(false);
-    }
-  }
-
-  function handleSend(e: React.FormEvent) {
-    e.preventDefault();
-    const text = input.trim();
-    if (!text || thinking || !subdomain) return;
-    const history = [...messages, { role: "user" as const, content: text }];
-    setMessages(history);
-    setInput("");
-    void send(history, questionnaire, subdomain);
+  function updateAnswer(id: string, value: string) {
+    setQuestionnaire((qs) => ({ ...qs, [id]: value }));
   }
 
   function handleDomainChange(v: string) {
@@ -243,7 +201,7 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
           <CheckCircle2 className="mx-auto mb-4 h-12 w-12 text-primary" />
           <h1 className="font-display mb-2 text-2xl font-bold text-on-surface">Application submitted</h1>
           <p className="mb-6 text-on-surface-variant">
-            Nice work — Nova has your application. The AWS SBG at SRMIST recruitment team will review
+            Nice work — we&apos;ve got your application. The AWS SBG at SRMIST recruitment team will review
             it. Watch your college email.
           </p>
           <Link href="/">
@@ -488,71 +446,49 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
         >
           {!subdomain ? (
             <p className="text-sm text-on-surface-variant">Waiting for domain and subdomain…</p>
-          ) : (
-            <div className="flex h-[420px] flex-col border-2 border-on-surface/10 bg-surface-container">
-              <div className="flex items-center justify-between gap-3 border-b border-on-surface/10 p-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-primary to-brand-primary-light">
-                    <Bot className="h-4 w-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-on-surface">Nova</p>
-                    <p className="text-[11px] text-on-surface-variant">AWS SBG at SRMIST recruitment chatbot</p>
-                  </div>
-                </div>
-                {totalQuestions > 0 && (
-                  <div
-                    className={`flex items-center gap-1.5 border-2 px-2.5 py-1 text-xs font-bold ${
-                      readyToSubmit ? "border-emerald-400 text-emerald-400" : "border-on-surface/15 text-on-surface-variant"
-                    }`}
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    {Math.min(Object.values(questionnaire).filter((v) => v?.trim()).length, totalQuestions)}/
-                    {totalQuestions}
-                  </div>
-                )}
-              </div>
-
-              <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
-                {messages.map((m, i) => (
-                  <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
-                        m.role === "user"
-                          ? "whitespace-pre-wrap bg-gradient-to-r from-brand-primary to-brand-primary-light text-white"
-                          : "bg-surface-container-lowest text-on-surface"
-                      }`}
-                    >
-                      {m.role === "assistant" ? (
-                        <ReactMarkdown components={markdownComponents}>{m.content}</ReactMarkdown>
-                      ) : (
-                        m.content
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {thinking && (
-                  <div className="flex justify-start">
-                    <div className="rounded-2xl bg-surface-container-lowest px-4 py-2.5 text-sm text-on-surface-variant">
-                      Nova is typing…
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <form onSubmit={handleSend} className="flex gap-2 border-t border-on-surface/10 p-2.5">
-                <Input
-                  ref={inputRef}
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder={thinking ? "Nova is typing…" : "Type your reply…"}
-                  disabled={submitting}
-                />
-                <Button type="submit" variant="gradient" size="icon" disabled={thinking || !input.trim()}>
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
+          ) : questionsLoading ? (
+            <div className="flex items-center justify-center gap-2 py-8 text-sm text-on-surface-variant">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading questions…
             </div>
+          ) : (
+            <>
+              {questions.length > 0 && (
+                <div
+                  className={`mb-2 flex w-fit items-center gap-1.5 border-2 px-2.5 py-1 text-xs font-bold ${
+                    readyToSubmit ? "border-emerald-400 text-emerald-400" : "border-on-surface/15 text-on-surface-variant"
+                  }`}
+                >
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  {questions.filter((q) => !!questionnaire[q.id]?.trim()).length}/{questions.length} answered
+                </div>
+              )}
+              {questions.map((q, i) => (
+                <div key={q.id} className="space-y-1.5">
+                  <Label htmlFor={`q-${q.id}`}>
+                    {i + 1}. {q.label}
+                    <Req />
+                  </Label>
+                  {q.type === "textarea" ? (
+                    <Textarea
+                      id={`q-${q.id}`}
+                      value={questionnaire[q.id] ?? ""}
+                      onChange={(e) => updateAnswer(q.id, e.target.value)}
+                      placeholder={q.placeholder}
+                      className="min-h-[100px]"
+                    />
+                  ) : (
+                    <Input
+                      id={`q-${q.id}`}
+                      value={questionnaire[q.id] ?? ""}
+                      onChange={(e) => updateAnswer(q.id, e.target.value)}
+                      placeholder={
+                        q.type === "link" ? q.placeholder || "https://..." : q.placeholder
+                      }
+                    />
+                  )}
+                </div>
+              ))}
+            </>
           )}
         </SectionCard>
 
@@ -724,7 +660,7 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
         )}
         {identityValid && socialsValid && resumeValid && !readyToSubmit && (
           <p className="text-center text-xs text-on-surface-variant">
-            Finish chatting with Nova above to unlock submit.
+            Answer every subdomain question above to unlock submit.
           </p>
         )}
         {identityValid && socialsValid && !resumeValid && (

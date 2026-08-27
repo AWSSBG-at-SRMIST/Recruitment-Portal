@@ -27,6 +27,7 @@ const S3_BUCKET = process.env.S3_BUCKET || "sbg-recruitment-resumes";
 
 const TABLE = {
   APPLICATIONS: "sbg-recruitment-applications",
+  APPLICATION_EMAILS: "sbg-recruitment-application-emails",
   QUESTIONS: "sbg-recruitment-questions",
   OTPS: "sbg-recruitment-otps",
   SESSIONS: "sbg-recruitment-sessions",
@@ -65,6 +66,26 @@ export const awsRepo: Repo = {
       })
     );
     return ((result.Items as Application[]) ?? [])[0] ?? null;
+  },
+
+  async claimApplicationEmail(collegeEmail) {
+    try {
+      await db.send(
+        new PutCommand({
+          TableName: TABLE.APPLICATION_EMAILS,
+          Item: { collegeEmail, claimedAt: Math.floor(Date.now() / 1000) },
+          ConditionExpression: "attribute_not_exists(collegeEmail)",
+        })
+      );
+      return true;
+    } catch (err) {
+      if (err instanceof Error && err.name === "ConditionalCheckFailedException") return false;
+      throw err;
+    }
+  },
+
+  async releaseApplicationEmail(collegeEmail) {
+    await db.send(new DeleteCommand({ TableName: TABLE.APPLICATION_EMAILS, Key: { collegeEmail } }));
   },
 
   async listApplications(filter: ApplicationFilter = {}) {
