@@ -221,6 +221,18 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
         <h1 className="font-display text-lg font-bold text-on-surface">Application</h1>
       </div>
 
+      <p className="mb-6 text-center text-xs text-on-surface-variant">
+        Facing an issue applying? Contact{" "}
+        <a href="tel:+917498511482" className="font-bold text-primary hover:underline">
+          Samidha Lade (+91 7498 511 482)
+        </a>{" "}
+        or{" "}
+        <a href="tel:+919289506696" className="font-bold text-primary hover:underline">
+          Krish Pundir (+91 92895 06696)
+        </a>
+        .
+      </p>
+
       <div className="space-y-5">
         <SectionCard step={1} title="Your Details">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
