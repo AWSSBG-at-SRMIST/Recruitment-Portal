@@ -12,6 +12,7 @@
     "@aws-sdk/client-dynamodb": "^3.1098.0",
     "@aws-sdk/client-s3": "^3.1098.0",
     "@aws-sdk/lib-dynamodb": "^3.1098.0",
+    "@napi-rs/canvas": "^1.0.8",
     "@radix-ui/react-dialog": "^1.1.23",
     "@radix-ui/react-label": "^2.1.15",
     "@radix-ui/react-select": "^2.3.7",

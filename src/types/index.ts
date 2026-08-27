@@ -93,7 +93,7 @@ export interface Application {
   dob: string | null; // optional
   domain: Domain;
   subdomain: Subdomain;
-  // Optional for 1st years, mandatory for 2nd years — null means not submitted.
+  // Optional for everyone — null means not submitted.
   resumeFileRef: string | null;
   portfolioUrl: string | null;
   linkedin: string;

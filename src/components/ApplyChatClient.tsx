@@ -33,6 +33,10 @@ const INSTAGRAM_URL = "https://www.instagram.com/awssbg.at.srmist/";
 const LINKEDIN_URL = "https://www.linkedin.com/company/awssbg-at-srmist";
 const MEETUP_URL = "https://www.meetup.com/awssbg-at-srmist/";
 const RECRUITMENT_GROUP_URL = "https://chat.whatsapp.com/GGQ5IJoMMdq5Ct9wkW0nFf";
+// Vercel rejects request bodies over ~4.5MB at the platform level with no
+// usable error — check client-side too so an oversized PDF is caught the
+// moment it's picked, not after a mysterious failed submit.
+const MAX_RESUME_BYTES = 4 * 1024 * 1024;
 
 function SectionCard({
   step,
@@ -77,6 +81,7 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
   const [awsCertLink2, setAwsCertLink2] = useState("");
   const [awsCertLink3, setAwsCertLink3] = useState("");
   const [resume, setResume] = useState<File | null>(null);
+  const [resumeError, setResumeError] = useState<string | null>(null);
   const [instagramChecked, setInstagramChecked] = useState(false);
   const [instagramUsername, setInstagramUsername] = useState("");
   const [meetupChecked, setMeetupChecked] = useState(false);
@@ -120,8 +125,11 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
     };
   }, [subdomain]);
 
+  // Vacuously true when a subdomain has zero configured questions — the
+  // server has no such requirement either, so this must never permanently
+  // block submission just because getSubdomainQuestions returned [].
   const readyToSubmit =
-    questions.length > 0 && questions.every((q) => !!questionnaire[q.id]?.trim());
+    !!subdomain && !questionsLoading && questions.every((q) => !!questionnaire[q.id]?.trim());
 
   function updateAnswer(id: string, value: string) {
     setQuestionnaire((qs) => ({ ...qs, [id]: value }));
@@ -138,7 +146,7 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
     !!gender &&
     !!year &&
     !!degree &&
-    phone.trim().length === 10 &&
+    /^[6-9]\d{9}$/.test(phone.trim()) &&
     !!personalEmail.trim() &&
     !!domain &&
     !!subdomain &&
@@ -148,8 +156,18 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
   // its username as proof — can't submit half-filled.
   const socialsValid =
     (!instagramChecked || !!instagramUsername.trim()) && (!meetupChecked || !!meetupUsername.trim());
-  // Resume is optional for 1st years, mandatory for 2nd years.
-  const resumeValid = year !== "2nd Year" || !!resume;
+  // Resume is optional for everyone.
+  const resumeValid = !resumeError;
+
+  function handleResumeChange(file: File | null) {
+    if (file && file.size > MAX_RESUME_BYTES) {
+      setResumeError("That PDF is over 4 MB — please compress it and re-attach.");
+      setResume(null);
+      return;
+    }
+    setResumeError(null);
+    setResume(file);
+  }
   const canSubmit =
     identityValid && socialsValid && resumeValid && readyToSubmit && joinedRecruitmentGroup && !submitting;
 
@@ -507,27 +525,24 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
         <SectionCard
           step={4}
           title="Resume"
-          subtitle={
-            year === "2nd Year"
-              ? "Required for 2nd years."
-              : "Optional for 1st years — attach one if you have it."
-          }
+          subtitle="Optional — attach one if you have it. PDF, max 4 MB."
         >
           <label className="flex cursor-pointer items-center gap-2 border-2 border-dashed border-on-surface/20 p-3 text-sm hover:bg-surface-container">
             <Upload className="h-4 w-4 shrink-0 text-primary" />
-            <span className="truncate text-on-surface-variant">{resume ? resume.name : "Click to attach (PDF)"}</span>
+            <span className="truncate text-on-surface-variant">{resume ? resume.name : "Click to attach (PDF, max 4 MB)"}</span>
             <input
               type="file"
               accept="application/pdf"
               className="hidden"
-              onChange={(e) => setResume(e.target.files?.[0] ?? null)}
+              onChange={(e) => handleResumeChange(e.target.files?.[0] ?? null)}
             />
           </label>
           {resume && (
             <p className="flex items-center gap-1 text-xs text-emerald-400">
-              <FileText className="h-3 w-3" /> Attached
+              <FileText className="h-3 w-3" /> Attached ({(resume.size / (1024 * 1024)).toFixed(1)} MB)
             </p>
           )}
+          {resumeError && <p className="text-xs text-red-400">{resumeError}</p>}
         </SectionCard>
 
         <div className="border-2 border-dashed border-primary/30 bg-surface-container-lowest p-5 card-shadow sm:p-6">
@@ -676,7 +691,7 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
           </p>
         )}
         {identityValid && socialsValid && !resumeValid && (
-          <p className="text-center text-xs text-amber-400">Attach your resume PDF to submit (required for 2nd years).</p>
+          <p className="text-center text-xs text-amber-400">Fix the resume file above to submit.</p>
         )}
         {identityValid && socialsValid && resumeValid && readyToSubmit && !joinedRecruitmentGroup && (
           <p className="text-center text-xs text-amber-400">

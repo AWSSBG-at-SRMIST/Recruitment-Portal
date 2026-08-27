@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { nanoid } from "nanoid";
 import { repo } from "@/lib/repo";
 import { getCurrentUser } from "@/lib/auth";
@@ -25,7 +25,12 @@ import { isRecruitmentOpen } from "@/lib/recruitment-window";
 import type { ApplicationFilter } from "@/lib/repo";
 import type { Domain, Subdomain, ApplicationStatus } from "@/types";
 
-const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
+// Vercel Serverless Functions silently reject request bodies over ~4.5 MB at
+// the platform level — before any of our own code, or even a 413 response,
+// ever runs. The client just sees a bare "Failed to fetch" with no error to
+// show. Cap well under that ceiling (leaving room for the rest of the
+// multipart form) so an oversized resume fails with an actual message.
+const MAX_FILE_BYTES = 4 * 1024 * 1024; // 4 MB
 
 // ── Requires login: submit an application ──────────────────────────────────
 export async function POST(req: NextRequest) {
@@ -140,12 +145,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "A valid GitHub profile link is required." }, { status: 400 });
     }
 
-    // Resume is optional for 1st years, mandatory for 2nd years.
+    // Resume is optional for everyone.
     const resumeField = form.get("resume");
     const resumeProvided = resumeField instanceof File && resumeField.size > 0;
-    if (year === "2nd Year" && !resumeProvided) {
-      return NextResponse.json({ error: "A resume PDF is required for 2nd years." }, { status: 400 });
-    }
 
     let buffer: Buffer | null = null;
     if (resumeProvided) {
@@ -154,7 +156,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Resume must be a PDF." }, { status: 400 });
       }
       if (resume.size > MAX_FILE_BYTES) {
-        return NextResponse.json({ error: "Resume exceeds the 10 MB limit." }, { status: 400 });
+        return NextResponse.json({ error: "Resume exceeds the 4 MB limit. Please compress it and try again." }, { status: 400 });
       }
       buffer = Buffer.from(await resume.arrayBuffer());
       // The browser-supplied Content-Type above is client controlled — a
@@ -176,16 +178,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Collect questionnaire answers for this subdomain's current question
-    // set (Manager-editable — always read live, never cached at build time).
-    const questionnaire: Record<string, string> = {};
-    const subdomainQuestions = await repo.getSubdomainQuestions(subdomain as Subdomain);
-    for (const q of subdomainQuestions) {
-      questionnaire[q.id] = (form.get(`q_${q.id}`) as string | null)?.trim() || "";
-    }
-
     const applicationId = nanoid(12);
+    // Populated inside the try block below, but declared here so it's still
+    // in scope for the background evaluation call after the try/catch.
+    const questionnaire: Record<string, string> = {};
     try {
+      // Collect questionnaire answers for this subdomain's current question
+      // set (Manager-editable — always read live, never cached at build
+      // time). Inside the try/release scope too — a transient failure here
+      // must free the email claim just like a resume-save or write failure
+      // would, or a legitimate applicant gets permanently locked out with
+      // no application ever created.
+      const subdomainQuestions = await repo.getSubdomainQuestions(subdomain as Subdomain);
+      for (const q of subdomainQuestions) {
+        questionnaire[q.id] = (form.get(`q_${q.id}`) as string | null)?.trim() || "";
+      }
+
       const resumeFileRef = buffer ? await repo.saveResumeFile(applicationId, buffer) : null;
 
       await repo.createApplication({
@@ -218,28 +226,38 @@ export async function POST(req: NextRequest) {
       // The application never actually got created — free up the email
       // claim so a genuine failure doesn't permanently lock the applicant
       // out of ever submitting.
-      await repo.releaseApplicationEmail(collegeEmail).catch(() => {});
+      await repo
+        .releaseApplicationEmail(collegeEmail)
+        .catch((releaseErr) =>
+          console.error(`Failed to release email claim for ${collegeEmail} — may be locked out:`, releaseErr)
+        );
       throw err;
     }
 
-    // Evaluate synchronously so the recruiter sees a score immediately. Failure
-    // here must not lose the application — it's already persisted above.
-    try {
-      const result = await evaluateApplication({
-        domain: domain as Domain,
-        subdomain: subdomain as Subdomain,
-        year,
-        resumeBuffer: buffer,
-        questionnaire,
-        portfolioUrl,
-        githubUsername,
-        leetcodeUsername,
-        awsCertCount: awsCertLinks.length,
-      });
-      await repo.updateApplicationEvaluation(applicationId, result);
-    } catch (err) {
-      console.error("Evaluation failed (application still saved):", err);
-    }
+    // Evaluate AFTER the response is sent, not before — the Groq call can
+    // take several seconds, and doing it inline risked the whole function
+    // being killed by Vercel's execution-time limit under any slowness,
+    // failing a perfectly good submission that was already saved above.
+    // The application is already persisted; a failed evaluation here just
+    // means it sits unscored until someone reruns it, never lost data.
+    after(async () => {
+      try {
+        const result = await evaluateApplication({
+          domain: domain as Domain,
+          subdomain: subdomain as Subdomain,
+          year,
+          resumeBuffer: buffer,
+          questionnaire,
+          portfolioUrl,
+          githubUsername,
+          leetcodeUsername,
+          awsCertCount: awsCertLinks.length,
+        });
+        await repo.updateApplicationEvaluation(applicationId, result);
+      } catch (err) {
+        console.error("Evaluation failed (application still saved):", err);
+      }
+    });
 
     return NextResponse.json({ success: true, applicationId });
   } catch (error) {

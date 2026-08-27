@@ -19,7 +19,7 @@ export interface EvaluationInput {
   domain: Domain;
   subdomain: Subdomain;
   year: string; // "1st Year" | "2nd Year" — calibrates how strictly experience is judged
-  resumeBuffer: Buffer | null; // null if not submitted (optional for 1st years)
+  resumeBuffer: Buffer | null; // null if not submitted (resume is optional for everyone)
   questionnaire: Record<string, string>;
   portfolioUrl: string | null;
   githubUsername: string | null;
@@ -98,7 +98,7 @@ function buildPrompt(
 
   const resumeBlock = resumeText.trim()
     ? `RESUME (extracted text, may be noisy):\n"""\n${resumeText.slice(0, 6000)}\n"""`
-    : "RESUME: Not submitted — resume is optional for 1st years. Judge this candidate on their questionnaire answers alone; do not penalise the missing resume beyond what the rubric already accounts for.";
+    : "RESUME: Not submitted — resume is optional. Judge this candidate on their questionnaire answers alone; do not penalise the missing resume beyond what the rubric already accounts for.";
 
   const yearCalibration =
     input.year === "1st Year"
@@ -197,12 +197,11 @@ function heuristicEvaluation(
   if (resumeText.trim().length > 500) {
     score += 6;
     strengths.push("Substantive resume content");
-  } else if (input.year === "2nd Year") {
-    concerns.push("Resume text is thin or unreadable");
   } else if (input.resumeBuffer) {
+    // A resume was actually submitted but produced little/no usable text —
+    // that's a real concern. No resume at all is not, since it's optional.
     concerns.push("Resume text is thin or unreadable");
   }
-  // else: 1st year with no resume at all — resume is optional for them, not a concern.
 
   if (input.portfolioUrl) {
     score += 6;

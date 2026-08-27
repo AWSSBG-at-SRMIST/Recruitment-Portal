@@ -10,8 +10,10 @@ const nextConfig: NextConfig = {
   },
 
   // Native / heavy Node-only deps must not be bundled by the server compiler —
-  // they use dynamic requires at runtime.
-  serverExternalPackages: ["pdf-parse"],
+  // they use dynamic requires at runtime. @napi-rs/canvas is a native binary
+  // pdfjs-dist (used by pdf-parse) optionally requires — without it present
+  // as a real dependency, that require throws instead of degrading quietly.
+  serverExternalPackages: ["pdf-parse", "@napi-rs/canvas"],
 };
 
 export default nextConfig;
