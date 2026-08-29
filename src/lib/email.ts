@@ -1,12 +1,17 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
+// Resend, not Gmail — Gmail's daily sending limit (500/day, shared across
+// every OTP + reminder email sent from one account, and also shared with
+// Internal-Dashboard's emails on the same Gmail account) got hit during
+// recruitment week and blocked logins entirely. Resend has no such shared
+// per-account cap and is built for transactional mail like this.
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const FROM_ADDRESS = "AWS SBG at SRMIST Recruitment <recruitment@awssbg-srmist.in>";
+// A small, pre-compressed copy — the source logo.png is 2.6MB (6250x6250),
+// far too large to embed at 36x36 in an email without slow/broken loading
+// in some clients.
+const LOGO_URL = "https://recruitments.awssbg-srmist.in/logo-email.png";
 
 function escHtml(s: string): string {
   return s
@@ -29,14 +34,21 @@ function shell(title: string, body: string) {
   <div style="max-width:520px;margin:0 auto;">
     <div style="height:4px;background:linear-gradient(90deg,#A855F7,#D946EF);"></div>
     <div style="background:#120d1e;border:2px solid #2a2236;border-top:none;padding:32px 32px 28px;">
-      <div style="padding-bottom:20px;margin-bottom:28px;border-bottom:1px solid #2a2236;">
-        <span style="color:#A855F7;font-size:13px;font-weight:bold;letter-spacing:3px;text-transform:uppercase;">
-          AWS SBG at SRMIST Recruitment
-        </span><br>
-        <span style="color:#A1A1AA;font-size:11px;letter-spacing:1px;">
-          AWS Student Builder Group &middot; SRM Institute of Science and Technology
-        </span>
-      </div>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="padding-bottom:20px;margin-bottom:28px;border-bottom:1px solid #2a2236;">
+        <tr>
+          <td style="padding-right:12px;vertical-align:middle;">
+            <img src="${LOGO_URL}" alt="AWS SBG at SRMIST" width="36" height="36" style="display:block;border-radius:6px;">
+          </td>
+          <td style="vertical-align:middle;">
+            <span style="color:#A855F7;font-size:13px;font-weight:bold;letter-spacing:3px;text-transform:uppercase;">
+              AWS SBG at SRMIST Recruitment
+            </span><br>
+            <span style="color:#A1A1AA;font-size:11px;letter-spacing:1px;">
+              AWS Student Builder Group &middot; SRM Institute of Science and Technology
+            </span>
+          </td>
+        </tr>
+      </table>
       ${body}
     </div>
     <div style="background:#0a0613;border:2px solid #1c1426;border-top:none;padding:10px 20px;text-align:center;">
@@ -50,10 +62,10 @@ function shell(title: string, body: string) {
 }
 
 export async function sendOTPEmail(email: string, otp: string, name = "there") {
-  // Demo/dev fallback: with no Gmail app password configured, print the OTP to
+  // Demo/dev fallback: with no Resend API key configured, print the OTP to
   // the server console instead of sending mail so the login flow is testable
   // locally without email credentials.
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+  if (!process.env.RESEND_API_KEY) {
     console.log(`\n[DEV OTP] ${email} → ${otp}  (${name})\n`);
     return;
   }
@@ -76,10 +88,12 @@ export async function sendOTPEmail(email: string, otp: string, name = "there") {
       do not share this OTP with anyone.
     </p>`;
 
-  await transporter.sendMail({
-    from: `"AWS SBG at SRMIST Recruitment" <${process.env.GMAIL_USER}>`,
+  const { error } = await resend.emails.send({
+    from: FROM_ADDRESS,
     to: email,
     subject: `[${otp}] Your sign-in OTP — AWS SBG at SRMIST Recruitment`,
     html: shell("Sign-In OTP", body),
   });
+
+  if (error) throw new Error(`Resend send failed: ${error.message}`);
 }
