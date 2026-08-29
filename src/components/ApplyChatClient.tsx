@@ -549,11 +549,11 @@ export function ApplyChatClient({ collegeEmail, initialName }: { collegeEmail: s
           <div className="flex items-center gap-3">
             <Sparkles className="h-4 w-4 shrink-0 text-primary" />
             <p className="font-display text-sm font-bold uppercase tracking-wide text-on-surface">
-              Follow Us <span className="normal-case text-on-surface-variant">(totally optional)</span>
+              Follow Us <span className="normal-case text-on-surface-variant">(+1 point each)</span>
             </p>
           </div>
           <p className="mt-1 pl-7 text-xs text-on-surface-variant">
-            Follow us on our socials for bonus points! 😄
+            Earn 1 bonus point for every social you follow — up to 3 extra points. 😄
           </p>
 
           <div className="mt-4 space-y-4">
