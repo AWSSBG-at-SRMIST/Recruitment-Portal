@@ -260,15 +260,24 @@ export function InterviewEvaluationBoard({
             </CardContent>
           </Card>
 
-          {criteria.length > 0 && applications.length === 0 && (
+          {applications.length === 0 && (
             <Card>
               <CardContent className="px-4 py-12 text-center text-on-surface-variant">
-                No candidates in this subdomain yet.
+                No candidates moved to Interview yet in this subdomain.
               </CardContent>
             </Card>
           )}
 
-          {criteria.length > 0 && applications.length > 0 && (
+          {applications.length > 0 && criteria.length === 0 && (
+            <Card>
+              <CardContent className="px-4 py-8 text-center text-on-surface-variant">
+                {applications.length} candidate{applications.length === 1 ? "" : "s"} in Interview — add at least one
+                criterion above to start scoring them.
+              </CardContent>
+            </Card>
+          )}
+
+          {applications.length > 0 && criteria.length > 0 && (
             <>
               {/* Mobile / narrow screens: one card per candidate, criteria stacked
                   vertically — a wide table forced into horizontal scroll here
