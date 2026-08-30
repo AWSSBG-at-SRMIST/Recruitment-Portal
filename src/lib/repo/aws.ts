@@ -9,7 +9,14 @@ import {
   ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import type { Application, QuestionDef, Subdomain } from "@/types";
+import type {
+  Application,
+  InterviewCriterion,
+  InterviewCriterionScore,
+  InterviewScore,
+  QuestionDef,
+  Subdomain,
+} from "@/types";
 import type { NewApplication, ApplicationFilter, Repo } from "./types";
 
 // Same AWS account/region as Internal-Dashboard and Official-Website.
@@ -29,6 +36,8 @@ const TABLE = {
   APPLICATIONS: "sbg-recruitment-applications",
   APPLICATION_EMAILS: "sbg-recruitment-application-emails",
   QUESTIONS: "sbg-recruitment-questions",
+  INTERVIEW_CRITERIA: "sbg-recruitment-interview-criteria",
+  INTERVIEW_SCORES: "sbg-recruitment-interview-scores",
   OTPS: "sbg-recruitment-otps",
   SESSIONS: "sbg-recruitment-sessions",
   RATE_LIMITS: "sbg-recruitment-rate-limits",
@@ -257,5 +266,51 @@ export const awsRepo: Repo = {
         Item: { subdomain, questions, updatedBy, updatedAt: Math.floor(Date.now() / 1000) },
       })
     );
+  },
+
+  async getInterviewCriteria(subdomain: Subdomain): Promise<InterviewCriterion[]> {
+    const result = await db.send(new GetCommand({ TableName: TABLE.INTERVIEW_CRITERIA, Key: { subdomain } }));
+    return (result.Item?.criteria as InterviewCriterion[]) ?? [];
+  },
+
+  async setInterviewCriteria(subdomain, criteria, updatedBy) {
+    await db.send(
+      new PutCommand({
+        TableName: TABLE.INTERVIEW_CRITERIA,
+        Item: { subdomain, criteria, updatedBy, updatedAt: Math.floor(Date.now() / 1000) },
+      })
+    );
+  },
+
+  async getInterviewScore(applicationId: string): Promise<InterviewScore | null> {
+    const result = await db.send(new GetCommand({ TableName: TABLE.INTERVIEW_SCORES, Key: { applicationId } }));
+    if (!result.Item) return null;
+    return {
+      applicationId,
+      scores: (result.Item.scores as InterviewCriterionScore[]) ?? [],
+      updatedBy: result.Item.updatedBy ?? "",
+      updatedAt: result.Item.updatedAt ?? 0,
+    };
+  },
+
+  async saveInterviewScore(applicationId, scores, updatedBy) {
+    const updatedAt = Math.floor(Date.now() / 1000);
+    await db.send(
+      new PutCommand({
+        TableName: TABLE.INTERVIEW_SCORES,
+        Item: { applicationId, scores, updatedBy, updatedAt },
+      })
+    );
+    return { applicationId, scores, updatedBy, updatedAt };
+  },
+
+  async getAllInterviewScores(): Promise<InterviewScore[]> {
+    const result = await db.send(new ScanCommand({ TableName: TABLE.INTERVIEW_SCORES }));
+    return (result.Items ?? []).map((item) => ({
+      applicationId: item.applicationId,
+      scores: (item.scores as InterviewCriterionScore[]) ?? [],
+      updatedBy: item.updatedBy ?? "",
+      updatedAt: item.updatedAt ?? 0,
+    }));
   },
 };

@@ -8,6 +8,9 @@ import type {
   AIEvaluation,
   VerifiedSignals,
   Year,
+  InterviewCriterion,
+  InterviewCriterionScore,
+  InterviewScore,
 } from "@/types";
 
 export interface NewApplication {
@@ -88,4 +91,18 @@ export interface Repo {
   // /questions page. Returns [] if unconfigured.
   getSubdomainQuestions(subdomain: Subdomain): Promise<QuestionDef[]>;
   setSubdomainQuestions(subdomain: Subdomain, questions: QuestionDef[], updatedBy: string): Promise<void>;
+
+  // Interview evaluation criteria, configured once per subdomain (not shown
+  // to applicants — separate from getSubdomainQuestions). Returns [] if
+  // unconfigured.
+  getInterviewCriteria(subdomain: Subdomain): Promise<InterviewCriterion[]>;
+  setInterviewCriteria(subdomain: Subdomain, criteria: InterviewCriterion[], updatedBy: string): Promise<void>;
+
+  // One row per application, rating each of the subdomain's current criteria
+  // 1-10. Returns null if nobody has scored this application yet.
+  getInterviewScore(applicationId: string): Promise<InterviewScore | null>;
+  saveInterviewScore(applicationId: string, scores: InterviewCriterionScore[], updatedBy: string): Promise<InterviewScore>;
+  // Every scored application at once, for the interview evaluation board —
+  // avoids one round trip per candidate.
+  getAllInterviewScores(): Promise<InterviewScore[]>;
 }

@@ -3,7 +3,6 @@ import type { ApplicationStatus } from "@/types";
 
 const STATUS_VARIANT: Record<ApplicationStatus, React.ComponentProps<typeof Badge>["variant"]> = {
   APPLIED: "secondary",
-  SHORTLISTED: "default",
   INTERVIEW: "warning",
   SELECTED: "success",
   REJECTED: "destructive",

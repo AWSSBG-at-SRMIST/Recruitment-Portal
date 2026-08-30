@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, HelpCircle, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, HelpCircle, ClipboardCheck, Menu, X } from "lucide-react";
 import { LogoutButton } from "@/components/LogoutButton";
 import type { SessionUser } from "@/types";
 import Logo from "../../public/logo.png";
@@ -88,10 +88,12 @@ function NavPanel({
 export function PortalSidebar({
   user,
   canSeeQuestionsNav,
+  canSeeInterviewsNav,
   children,
 }: {
   user: SessionUser;
   canSeeQuestionsNav: boolean;
+  canSeeInterviewsNav: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -100,6 +102,9 @@ export function PortalSidebar({
   const navItems: NavItem[] = [
     { href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
     { href: "/applications", label: "Applications", icon: <Users className="h-4 w-4" /> },
+    ...(canSeeInterviewsNav
+      ? [{ href: "/interviews", label: "Interviews", icon: <ClipboardCheck className="h-4 w-4" /> }]
+      : []),
     ...(canSeeQuestionsNav
       ? [{ href: "/questions", label: "Questions", icon: <HelpCircle className="h-4 w-4" /> }]
       : []),

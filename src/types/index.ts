@@ -20,15 +20,9 @@ export interface QuestionDef {
   type: "text" | "textarea" | "link";
 }
 
-export type ApplicationStatus = "APPLIED" | "SHORTLISTED" | "INTERVIEW" | "SELECTED" | "REJECTED";
+export type ApplicationStatus = "APPLIED" | "INTERVIEW" | "SELECTED" | "REJECTED";
 
-export const APPLICATION_STATUSES: ApplicationStatus[] = [
-  "APPLIED",
-  "SHORTLISTED",
-  "INTERVIEW",
-  "SELECTED",
-  "REJECTED",
-];
+export const APPLICATION_STATUSES: ApplicationStatus[] = ["APPLIED", "INTERVIEW", "SELECTED", "REJECTED"];
 
 export interface AIEvaluation {
   score: number;
@@ -115,6 +109,31 @@ export interface Application {
   aiEvaluation: AIEvaluation | null;
   verifiedSignals: VerifiedSignals | null;
   appliedAt: number;
+}
+
+// Interview evaluation criteria — a Manager/Associate sets these up once per
+// subdomain (e.g. "Communication", "Problem Solving"), and every candidate
+// in that subdomain is rated 1-10 against the same fixed set. Distinct from
+// QuestionDef (the application-form questions applicants answer) — these
+// never get shown to applicants.
+export interface InterviewCriterion {
+  id: string;
+  label: string;
+}
+
+export interface InterviewCriterionScore {
+  criterionId: string;
+  score: number; // 1-10
+}
+
+// One row per application — the overall percentage is derived (sum / (count
+// * 10)) at read time, never stored, so it's always consistent with
+// whichever criteria are currently configured for the subdomain.
+export interface InterviewScore {
+  applicationId: string;
+  scores: InterviewCriterionScore[];
+  updatedBy: string;
+  updatedAt: number;
 }
 
 // Every role a club member can hold, plus OBSERVER — faculty/industry

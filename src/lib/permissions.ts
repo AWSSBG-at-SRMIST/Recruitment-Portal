@@ -59,6 +59,16 @@ export function canEditSubdomainQuestions(user: SessionUser, subdomain: Subdomai
   return false;
 }
 
+// Interview evaluation is Manager/Associate territory (unlike application
+// questions, which Associates don't touch) — a Director can still reach any
+// subdomain in their own domain, and Presidium any subdomain at all.
+export function canEditInterviewCriteria(user: SessionUser, subdomain: Subdomain): boolean {
+  if (isPresidium(user)) return true;
+  if (user.role === "MANAGER" || user.role === "ASSOCIATE") return user.subdomain === subdomain;
+  if (user.role === "DIRECTOR") return !!user.domain && DOMAIN_SUBDOMAINS[user.domain].includes(subdomain);
+  return false;
+}
+
 // Domain(s)/subdomain(s) a user's view should be scoped to, for building
 // filter dropdowns and list-query scoping. `null` domain/subdomain in the
 // result means "no restriction on this axis" (Presidium, Observer, or a
