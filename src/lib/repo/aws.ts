@@ -53,6 +53,25 @@ function streamToBuffer(stream: unknown): Promise<Buffer> {
   });
 }
 
+// A single ScanCommand caps its response at ~1MB of evaluated data — once a
+// table's total scanned size exceeds that (as sbg-recruitment-applications
+// eventually did, once each item carries a full AI evaluation), DynamoDB
+// returns a partial page plus a LastEvaluatedKey and silently truncates
+// unless the caller loops. Every full-table read in this file must go
+// through this helper, not a bare ScanCommand.
+async function scanAll<T>(tableName: string): Promise<T[]> {
+  const items: T[] = [];
+  let exclusiveStartKey: Record<string, unknown> | undefined;
+  do {
+    const result = await db.send(
+      new ScanCommand({ TableName: tableName, ExclusiveStartKey: exclusiveStartKey })
+    );
+    items.push(...((result.Items as T[]) ?? []));
+    exclusiveStartKey = result.LastEvaluatedKey;
+  } while (exclusiveStartKey);
+  return items;
+}
+
 export const awsRepo: Repo = {
   async createApplication(app: NewApplication): Promise<Application> {
     const item = { ...app, status: "APPLIED", aiScore: null, aiEvaluation: null, verifiedSignals: null };
@@ -66,15 +85,12 @@ export const awsRepo: Repo = {
   },
 
   async getApplicationByEmail(collegeEmail) {
-    const result = await db.send(
-      new ScanCommand({
-        TableName: TABLE.APPLICATIONS,
-        FilterExpression: "collegeEmail = :email",
-        ExpressionAttributeValues: { ":email": collegeEmail },
-        Limit: 1,
-      })
-    );
-    return ((result.Items as Application[]) ?? [])[0] ?? null;
+    // A Scan's Limit caps items evaluated per page, not items matching the
+    // filter — combined with FilterExpression, Limit:1 could scan exactly
+    // one (non-matching) item and wrongly report "no application" even when
+    // one exists elsewhere in the table. Scan everything, filter in memory.
+    const items = await scanAll<Application>(TABLE.APPLICATIONS);
+    return items.find((a) => a.collegeEmail === collegeEmail) ?? null;
   },
 
   async claimApplicationEmail(collegeEmail) {
@@ -98,8 +114,7 @@ export const awsRepo: Repo = {
   },
 
   async listApplications(filter: ApplicationFilter = {}) {
-    const result = await db.send(new ScanCommand({ TableName: TABLE.APPLICATIONS }));
-    let items = (result.Items as Application[]) ?? [];
+    let items = await scanAll<Application>(TABLE.APPLICATIONS);
     if (filter.domain) items = items.filter((i) => i.domain === filter.domain);
     if (filter.subdomain) items = items.filter((i) => i.subdomain === filter.subdomain);
     if (filter.status) items = items.filter((i) => i.status === filter.status);
@@ -305,12 +320,12 @@ export const awsRepo: Repo = {
   },
 
   async getAllInterviewScores(): Promise<InterviewScore[]> {
-    const result = await db.send(new ScanCommand({ TableName: TABLE.INTERVIEW_SCORES }));
-    return (result.Items ?? []).map((item) => ({
-      applicationId: item.applicationId,
+    const items = await scanAll<Record<string, unknown>>(TABLE.INTERVIEW_SCORES);
+    return items.map((item) => ({
+      applicationId: item.applicationId as string,
       scores: (item.scores as InterviewCriterionScore[]) ?? [],
-      updatedBy: item.updatedBy ?? "",
-      updatedAt: item.updatedAt ?? 0,
+      updatedBy: (item.updatedBy as string) ?? "",
+      updatedAt: (item.updatedAt as number) ?? 0,
     }));
   },
 };
