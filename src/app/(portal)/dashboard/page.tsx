@@ -4,13 +4,11 @@ import { redirect } from "next/navigation";
 import { repo } from "@/lib/repo";
 import { getCurrentUser } from "@/lib/auth";
 import { getVisibilityScope } from "@/lib/permissions";
-import { listActiveMembers } from "@/lib/members";
 import {
   RECRUITMENT_TARGETS,
   GD_FUNNEL_MULTIPLIER,
   INTERVIEW_FUNNEL_MULTIPLIER,
   GENDER_RATIO_TOLERANCE,
-  isSeniorBuilder,
 } from "@/lib/recruitmentTargets";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ALL_DOMAINS, APPLICATION_STATUSES, DOMAIN_SUBDOMAINS, type Application, type Domain, type Subdomain } from "@/types";
@@ -23,23 +21,11 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   const scope = getVisibilityScope(user);
 
-  const [applications, activeMembers] = await Promise.all([
-    repo.listApplications({
-      domain: scope.domain || undefined,
-      subdomain: scope.subdomain || undefined,
-    }),
-    listActiveMembers(),
-  ]);
+  const applications = await repo.listApplications({
+    domain: scope.domain || undefined,
+    subdomain: scope.subdomain || undefined,
+  });
   const visibleDomains = scope.domain ? [scope.domain] : ALL_DOMAINS;
-
-  // Current builders per subdomain, excluding 3rd-year+ (still full members,
-  // just not counted against this cycle's seat targets — see
-  // lib/recruitmentTargets).
-  const builderCounts: Partial<Record<Subdomain, number>> = {};
-  for (const m of activeMembers) {
-    if (!m.subdomain || isSeniorBuilder(m.regNo)) continue;
-    builderCounts[m.subdomain] = (builderCounts[m.subdomain] ?? 0) + 1;
-  }
 
   const total = applications.length;
   const byStatus = Object.fromEntries(
@@ -104,12 +90,7 @@ export default async function DashboardPage() {
         })}
       </div>
 
-      <RecruitmentTargets
-        applications={applications}
-        builderCounts={builderCounts}
-        visibleDomains={visibleDomains}
-        scopedSubdomain={scope.subdomain}
-      />
+      <RecruitmentTargets applications={applications} visibleDomains={visibleDomains} scopedSubdomain={scope.subdomain} />
 
       <TopCandidates applications={applications} />
     </div>
@@ -118,12 +99,10 @@ export default async function DashboardPage() {
 
 function RecruitmentTargets({
   applications,
-  builderCounts,
   visibleDomains,
   scopedSubdomain,
 }: {
   applications: Application[];
-  builderCounts: Partial<Record<Subdomain, number>>;
   visibleDomains: Domain[];
   scopedSubdomain: Subdomain | null;
 }) {
@@ -133,8 +112,6 @@ function RecruitmentTargets({
       : DOMAIN_SUBDOMAINS[domain];
     return subdomains.map((subdomain) => {
       const target = RECRUITMENT_TARGETS[subdomain];
-      const currentBuilders = builderCounts[subdomain] ?? 0;
-      const openSeats = Math.max(target - currentBuilders, 0);
 
       const subApps = applications.filter((a) => a.subdomain === subdomain);
       const shortlisted = subApps.filter((a) => a.status === "SHORTLISTED").length;
@@ -149,13 +126,11 @@ function RecruitmentTargets({
       return {
         domain,
         subdomain,
-        currentBuilders,
         target,
-        openSeats,
         shortlisted,
-        gdTarget: openSeats * GD_FUNNEL_MULTIPLIER,
+        gdTarget: target * GD_FUNNEL_MULTIPLIER,
         interview,
-        interviewTarget: openSeats * INTERVIEW_FUNNEL_MULTIPLIER,
+        interviewTarget: target * INTERVIEW_FUNNEL_MULTIPLIER,
         selected: selectedTotal,
         male,
         female,
@@ -169,18 +144,16 @@ function RecruitmentTargets({
       <CardHeader>
         <CardTitle>Recruitment targets</CardTitle>
         <p className="text-xs font-normal normal-case text-on-surface-variant">
-          Open seats exclude 3rd-year+ builders already in the club. Shortlist (GD) aims for 3x open seats,
-          Interview 2x — pick the best candidates for however many seats are open at the end. Gender is flagged
-          once a subdomain&apos;s selections cross a 60/40 split.
+          Shortlist (GD) aims for 3x the target, Interview 2x — pick the best candidates for however many
+          seats are open at the end. Gender is flagged once a subdomain&apos;s selections cross a 60/40 split.
         </p>
       </CardHeader>
       <CardContent className="overflow-x-auto p-0">
-        <table className="w-full min-w-[720px] text-sm">
+        <table className="w-full min-w-[680px] text-sm">
           <thead>
             <tr className="border-b-2 border-on-surface/10 text-left text-xs font-bold uppercase tracking-wide text-on-surface-variant">
               <th className="px-4 py-3 font-bold">Subdomain</th>
-              <th className="px-3 py-3 text-center font-bold">Builders</th>
-              <th className="px-3 py-3 text-center font-bold">Open</th>
+              <th className="px-3 py-3 text-center font-bold">Target</th>
               <th className="px-3 py-3 text-center font-bold">GD (shortlisted)</th>
               <th className="px-3 py-3 text-center font-bold">Interview</th>
               <th className="px-3 py-3 text-center font-bold">Selected</th>
@@ -199,10 +172,7 @@ function RecruitmentTargets({
                   </Link>
                   <div className="text-xs text-on-surface-variant">{r.domain}</div>
                 </td>
-                <td className="px-3 py-3 text-center tabular-nums text-on-surface-variant">
-                  {r.currentBuilders} / {r.target}
-                </td>
-                <td className="px-3 py-3 text-center font-bold tabular-nums text-primary">{r.openSeats}</td>
+                <td className="px-3 py-3 text-center font-bold tabular-nums text-primary">{r.target}</td>
                 <td className="px-3 py-3 text-center tabular-nums">
                   <span className={r.shortlisted >= r.gdTarget ? "text-emerald-400" : "text-on-surface"}>
                     {r.shortlisted}
@@ -216,10 +186,10 @@ function RecruitmentTargets({
                   <span className="text-on-surface-variant"> / {r.interviewTarget}</span>
                 </td>
                 <td className="px-3 py-3 text-center tabular-nums">
-                  <span className={r.selected >= r.openSeats ? "text-emerald-400" : "text-on-surface"}>
+                  <span className={r.selected >= r.target ? "text-emerald-400" : "text-on-surface"}>
                     {r.selected}
                   </span>
-                  <span className="text-on-surface-variant"> / {r.openSeats}</span>
+                  <span className="text-on-surface-variant"> / {r.target}</span>
                 </td>
                 <td className="px-3 py-3 text-center tabular-nums">
                   {r.selected === 0 ? (
