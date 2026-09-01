@@ -14,6 +14,9 @@ import type {
   InterviewCriterion,
   InterviewCriterionScore,
   InterviewScore,
+  GDCriterion,
+  GDCriterionScore,
+  GDScore,
   QuestionDef,
   Subdomain,
 } from "@/types";
@@ -38,6 +41,8 @@ const TABLE = {
   QUESTIONS: "sbg-recruitment-questions",
   INTERVIEW_CRITERIA: "sbg-recruitment-interview-criteria",
   INTERVIEW_SCORES: "sbg-recruitment-interview-scores",
+  GD_CRITERIA: "sbg-recruitment-gd-criteria",
+  GD_SCORES: "sbg-recruitment-gd-scores",
   OTPS: "sbg-recruitment-otps",
   SESSIONS: "sbg-recruitment-sessions",
   RATE_LIMITS: "sbg-recruitment-rate-limits",
@@ -324,6 +329,52 @@ export const awsRepo: Repo = {
     return items.map((item) => ({
       applicationId: item.applicationId as string,
       scores: (item.scores as InterviewCriterionScore[]) ?? [],
+      updatedBy: (item.updatedBy as string) ?? "",
+      updatedAt: (item.updatedAt as number) ?? 0,
+    }));
+  },
+
+  async getGDCriteria(subdomain: Subdomain): Promise<GDCriterion[]> {
+    const result = await db.send(new GetCommand({ TableName: TABLE.GD_CRITERIA, Key: { subdomain } }));
+    return (result.Item?.criteria as GDCriterion[]) ?? [];
+  },
+
+  async setGDCriteria(subdomain, criteria, updatedBy) {
+    await db.send(
+      new PutCommand({
+        TableName: TABLE.GD_CRITERIA,
+        Item: { subdomain, criteria, updatedBy, updatedAt: Math.floor(Date.now() / 1000) },
+      })
+    );
+  },
+
+  async getGDScore(applicationId: string): Promise<GDScore | null> {
+    const result = await db.send(new GetCommand({ TableName: TABLE.GD_SCORES, Key: { applicationId } }));
+    if (!result.Item) return null;
+    return {
+      applicationId,
+      scores: (result.Item.scores as GDCriterionScore[]) ?? [],
+      updatedBy: result.Item.updatedBy ?? "",
+      updatedAt: result.Item.updatedAt ?? 0,
+    };
+  },
+
+  async saveGDScore(applicationId, scores, updatedBy) {
+    const updatedAt = Math.floor(Date.now() / 1000);
+    await db.send(
+      new PutCommand({
+        TableName: TABLE.GD_SCORES,
+        Item: { applicationId, scores, updatedBy, updatedAt },
+      })
+    );
+    return { applicationId, scores, updatedBy, updatedAt };
+  },
+
+  async getAllGDScores(): Promise<GDScore[]> {
+    const items = await scanAll<Record<string, unknown>>(TABLE.GD_SCORES);
+    return items.map((item) => ({
+      applicationId: item.applicationId as string,
+      scores: (item.scores as GDCriterionScore[]) ?? [],
       updatedBy: (item.updatedBy as string) ?? "",
       updatedAt: (item.updatedAt as number) ?? 0,
     }));

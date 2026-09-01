@@ -1,0 +1,58 @@
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import { repo } from "@/lib/repo";
+import { isPresidium, canEditGDCriteria } from "@/lib/permissions";
+import { DOMAIN_SUBDOMAINS, type Subdomain, type GDCriterionScore } from "@/types";
+import { GDEvaluationBoard } from "@/components/GDEvaluationBoard";
+
+export const metadata: Metadata = { title: "Group Discussion" };
+export const dynamic = "force-dynamic";
+
+export default async function GDPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  // Manager/Associate (their own subdomain), Director (their domain),
+  // Presidium (everything) — matches who can score GD.
+  const editableSubdomains: Subdomain[] = isPresidium(user)
+    ? Object.values(DOMAIN_SUBDOMAINS).flat()
+    : Object.values(DOMAIN_SUBDOMAINS)
+        .flat()
+        .filter((s) => canEditGDCriteria(user, s));
+
+  if (editableSubdomains.length === 0) redirect("/dashboard");
+
+  const initialSubdomain = editableSubdomains[0];
+  const [criteria, applications, allScores] = await Promise.all([
+    repo.getGDCriteria(initialSubdomain),
+    // Only candidates actually moved to the Shortlisted (GD) stage — not
+    // every applicant in the subdomain.
+    repo.listApplications({ subdomain: initialSubdomain, status: "SHORTLISTED" }),
+    repo.getAllGDScores(),
+  ]);
+  const applicationIds = new Set(applications.map((a) => a.applicationId));
+  const scores: Record<string, GDCriterionScore[]> = {};
+  for (const s of allScores) {
+    if (applicationIds.has(s.applicationId)) scores[s.applicationId] = s.scores;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-display text-3xl font-bold text-on-surface">Group Discussion</h1>
+        <p className="mt-1 text-on-surface-variant">
+          Set your subdomain&apos;s evaluation criteria, then rate every shortlisted candidate 1-10 against them.
+        </p>
+      </div>
+
+      <GDEvaluationBoard
+        editableSubdomains={editableSubdomains}
+        initialSubdomain={initialSubdomain}
+        initialCriteria={criteria}
+        initialApplications={applications}
+        initialScores={scores}
+      />
+    </div>
+  );
+}

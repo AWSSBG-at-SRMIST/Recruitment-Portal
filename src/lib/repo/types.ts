@@ -11,6 +11,9 @@ import type {
   InterviewCriterion,
   InterviewCriterionScore,
   InterviewScore,
+  GDCriterion,
+  GDCriterionScore,
+  GDScore,
 } from "@/types";
 
 export interface NewApplication {
@@ -105,4 +108,14 @@ export interface Repo {
   // Every scored application at once, for the interview evaluation board —
   // avoids one round trip per candidate.
   getAllInterviewScores(): Promise<InterviewScore[]>;
+
+  // Group Discussion evaluation criteria, configured once per subdomain —
+  // same shape as the interview criteria above, but a separate table since
+  // GD (SHORTLISTED stage) and Interview are scored independently.
+  getGDCriteria(subdomain: Subdomain): Promise<GDCriterion[]>;
+  setGDCriteria(subdomain: Subdomain, criteria: GDCriterion[], updatedBy: string): Promise<void>;
+
+  getGDScore(applicationId: string): Promise<GDScore | null>;
+  saveGDScore(applicationId: string, scores: GDCriterionScore[], updatedBy: string): Promise<GDScore>;
+  getAllGDScores(): Promise<GDScore[]>;
 }

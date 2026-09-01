@@ -69,6 +69,15 @@ export function canEditInterviewCriteria(user: SessionUser, subdomain: Subdomain
   return false;
 }
 
+// Same scope as interview evaluation — Manager/Associate own-subdomain,
+// Director own-domain, Presidium unrestricted.
+export function canEditGDCriteria(user: SessionUser, subdomain: Subdomain): boolean {
+  if (isPresidium(user)) return true;
+  if (user.role === "MANAGER" || user.role === "ASSOCIATE") return user.subdomain === subdomain;
+  if (user.role === "DIRECTOR") return !!user.domain && DOMAIN_SUBDOMAINS[user.domain].includes(subdomain);
+  return false;
+}
+
 // Domain(s)/subdomain(s) a user's view should be scoped to, for building
 // filter dropdowns and list-query scoping. `null` domain/subdomain in the
 // result means "no restriction on this axis" (Presidium, Observer, or a

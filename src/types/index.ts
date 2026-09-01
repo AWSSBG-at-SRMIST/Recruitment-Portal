@@ -20,9 +20,15 @@ export interface QuestionDef {
   type: "text" | "textarea" | "link";
 }
 
-export type ApplicationStatus = "APPLIED" | "INTERVIEW" | "SELECTED" | "REJECTED";
+export type ApplicationStatus = "APPLIED" | "SHORTLISTED" | "INTERVIEW" | "SELECTED" | "REJECTED";
 
-export const APPLICATION_STATUSES: ApplicationStatus[] = ["APPLIED", "INTERVIEW", "SELECTED", "REJECTED"];
+export const APPLICATION_STATUSES: ApplicationStatus[] = [
+  "APPLIED",
+  "SHORTLISTED",
+  "INTERVIEW",
+  "SELECTED",
+  "REJECTED",
+];
 
 export interface AIEvaluation {
   score: number;
@@ -132,6 +138,26 @@ export interface InterviewCriterionScore {
 export interface InterviewScore {
   applicationId: string;
   scores: InterviewCriterionScore[];
+  updatedBy: string;
+  updatedAt: number;
+}
+
+// Same idea as the interview criteria above, but for the Group Discussion
+// round (SHORTLISTED stage) — a separate criteria set and score table since
+// GD and Interview are scored independently of each other.
+export interface GDCriterion {
+  id: string;
+  label: string;
+}
+
+export interface GDCriterionScore {
+  criterionId: string;
+  score: number; // 1-10
+}
+
+export interface GDScore {
+  applicationId: string;
+  scores: GDCriterionScore[];
   updatedBy: string;
   updatedAt: number;
 }
