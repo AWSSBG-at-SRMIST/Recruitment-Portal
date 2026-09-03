@@ -56,3 +56,23 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const saved = await repo.saveGDScore(id, cleanScores, user.name);
   return NextResponse.json({ score: saved });
 }
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
+  const application = await repo.getApplication(id);
+  if (!application) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!canEditGDCriteria(user, application.subdomain)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { attended } = await req.json();
+  if (typeof attended !== "boolean") {
+    return NextResponse.json({ error: "attended must be a boolean" }, { status: 400 });
+  }
+
+  const saved = await repo.setGDAttendance(id, attended, user.name);
+  return NextResponse.json({ score: saved });
+}

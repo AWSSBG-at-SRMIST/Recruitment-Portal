@@ -135,9 +135,12 @@ export interface InterviewCriterionScore {
 // One row per application — the overall percentage is derived (sum / (count
 // * 10)) at read time, never stored, so it's always consistent with
 // whichever criteria are currently configured for the subdomain.
+// `attended` defaults to false until someone explicitly marks the candidate
+// present — there's no third "unmarked" state.
 export interface InterviewScore {
   applicationId: string;
   scores: InterviewCriterionScore[];
+  attended: boolean;
   updatedBy: string;
   updatedAt: number;
 }
@@ -158,6 +161,7 @@ export interface GDCriterionScore {
 export interface GDScore {
   applicationId: string;
   scores: GDCriterionScore[];
+  attended: boolean;
   updatedBy: string;
   updatedAt: number;
 }

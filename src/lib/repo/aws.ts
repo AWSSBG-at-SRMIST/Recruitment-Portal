@@ -308,20 +308,53 @@ export const awsRepo: Repo = {
     return {
       applicationId,
       scores: (result.Item.scores as InterviewCriterionScore[]) ?? [],
+      attended: (result.Item.attended as boolean) ?? false,
       updatedBy: result.Item.updatedBy ?? "",
       updatedAt: result.Item.updatedAt ?? 0,
     };
   },
 
+  // UpdateCommand, not PutCommand — a full-item Put here would silently wipe
+  // out `attended` (set independently via setInterviewAttendance) whenever
+  // scores are saved afterward.
   async saveInterviewScore(applicationId, scores, updatedBy) {
     const updatedAt = Math.floor(Date.now() / 1000);
-    await db.send(
-      new PutCommand({
+    const result = await db.send(
+      new UpdateCommand({
         TableName: TABLE.INTERVIEW_SCORES,
-        Item: { applicationId, scores, updatedBy, updatedAt },
+        Key: { applicationId },
+        UpdateExpression: "SET scores = :sc, updatedBy = :u, updatedAt = :t",
+        ExpressionAttributeValues: { ":sc": scores, ":u": updatedBy, ":t": updatedAt },
+        ReturnValues: "ALL_NEW",
       })
     );
-    return { applicationId, scores, updatedBy, updatedAt };
+    return {
+      applicationId,
+      scores,
+      attended: (result.Attributes?.attended as boolean) ?? false,
+      updatedBy,
+      updatedAt,
+    };
+  },
+
+  async setInterviewAttendance(applicationId, attended, updatedBy) {
+    const updatedAt = Math.floor(Date.now() / 1000);
+    const result = await db.send(
+      new UpdateCommand({
+        TableName: TABLE.INTERVIEW_SCORES,
+        Key: { applicationId },
+        UpdateExpression: "SET attended = :a, updatedBy = :u, updatedAt = :t",
+        ExpressionAttributeValues: { ":a": attended, ":u": updatedBy, ":t": updatedAt },
+        ReturnValues: "ALL_NEW",
+      })
+    );
+    return {
+      applicationId,
+      scores: (result.Attributes?.scores as InterviewCriterionScore[]) ?? [],
+      attended,
+      updatedBy,
+      updatedAt,
+    };
   },
 
   async getAllInterviewScores(): Promise<InterviewScore[]> {
@@ -329,6 +362,7 @@ export const awsRepo: Repo = {
     return items.map((item) => ({
       applicationId: item.applicationId as string,
       scores: (item.scores as InterviewCriterionScore[]) ?? [],
+      attended: (item.attended as boolean) ?? false,
       updatedBy: (item.updatedBy as string) ?? "",
       updatedAt: (item.updatedAt as number) ?? 0,
     }));
@@ -354,20 +388,52 @@ export const awsRepo: Repo = {
     return {
       applicationId,
       scores: (result.Item.scores as GDCriterionScore[]) ?? [],
+      attended: (result.Item.attended as boolean) ?? false,
       updatedBy: result.Item.updatedBy ?? "",
       updatedAt: result.Item.updatedAt ?? 0,
     };
   },
 
+  // UpdateCommand, not PutCommand — see saveInterviewScore for why: a full
+  // Put would wipe out `attended` whenever scores are saved afterward.
   async saveGDScore(applicationId, scores, updatedBy) {
     const updatedAt = Math.floor(Date.now() / 1000);
-    await db.send(
-      new PutCommand({
+    const result = await db.send(
+      new UpdateCommand({
         TableName: TABLE.GD_SCORES,
-        Item: { applicationId, scores, updatedBy, updatedAt },
+        Key: { applicationId },
+        UpdateExpression: "SET scores = :sc, updatedBy = :u, updatedAt = :t",
+        ExpressionAttributeValues: { ":sc": scores, ":u": updatedBy, ":t": updatedAt },
+        ReturnValues: "ALL_NEW",
       })
     );
-    return { applicationId, scores, updatedBy, updatedAt };
+    return {
+      applicationId,
+      scores,
+      attended: (result.Attributes?.attended as boolean) ?? false,
+      updatedBy,
+      updatedAt,
+    };
+  },
+
+  async setGDAttendance(applicationId, attended, updatedBy) {
+    const updatedAt = Math.floor(Date.now() / 1000);
+    const result = await db.send(
+      new UpdateCommand({
+        TableName: TABLE.GD_SCORES,
+        Key: { applicationId },
+        UpdateExpression: "SET attended = :a, updatedBy = :u, updatedAt = :t",
+        ExpressionAttributeValues: { ":a": attended, ":u": updatedBy, ":t": updatedAt },
+        ReturnValues: "ALL_NEW",
+      })
+    );
+    return {
+      applicationId,
+      scores: (result.Attributes?.scores as GDCriterionScore[]) ?? [],
+      attended,
+      updatedBy,
+      updatedAt,
+    };
   },
 
   async getAllGDScores(): Promise<GDScore[]> {
@@ -375,6 +441,7 @@ export const awsRepo: Repo = {
     return items.map((item) => ({
       applicationId: item.applicationId as string,
       scores: (item.scores as GDCriterionScore[]) ?? [],
+      attended: (item.attended as boolean) ?? false,
       updatedBy: (item.updatedBy as string) ?? "",
       updatedAt: (item.updatedAt as number) ?? 0,
     }));

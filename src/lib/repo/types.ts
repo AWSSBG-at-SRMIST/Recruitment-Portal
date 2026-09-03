@@ -105,6 +105,9 @@ export interface Repo {
   // 1-10. Returns null if nobody has scored this application yet.
   getInterviewScore(applicationId: string): Promise<InterviewScore | null>;
   saveInterviewScore(applicationId: string, scores: InterviewCriterionScore[], updatedBy: string): Promise<InterviewScore>;
+  // Independent of scoring — a candidate can be marked present/absent
+  // without ever being scored, and vice versa.
+  setInterviewAttendance(applicationId: string, attended: boolean, updatedBy: string): Promise<InterviewScore>;
   // Every scored application at once, for the interview evaluation board —
   // avoids one round trip per candidate.
   getAllInterviewScores(): Promise<InterviewScore[]>;
@@ -117,5 +120,6 @@ export interface Repo {
 
   getGDScore(applicationId: string): Promise<GDScore | null>;
   saveGDScore(applicationId: string, scores: GDCriterionScore[], updatedBy: string): Promise<GDScore>;
+  setGDAttendance(applicationId: string, attended: boolean, updatedBy: string): Promise<GDScore>;
   getAllGDScores(): Promise<GDScore[]>;
 }

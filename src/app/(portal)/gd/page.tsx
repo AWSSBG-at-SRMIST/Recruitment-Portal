@@ -33,8 +33,11 @@ export default async function GDPage() {
   ]);
   const applicationIds = new Set(applications.map((a) => a.applicationId));
   const scores: Record<string, GDCriterionScore[]> = {};
+  const attendance: Record<string, boolean> = {};
   for (const s of allScores) {
-    if (applicationIds.has(s.applicationId)) scores[s.applicationId] = s.scores;
+    if (!applicationIds.has(s.applicationId)) continue;
+    scores[s.applicationId] = s.scores;
+    attendance[s.applicationId] = s.attended;
   }
 
   return (
@@ -52,6 +55,7 @@ export default async function GDPage() {
         initialCriteria={criteria}
         initialApplications={applications}
         initialScores={scores}
+        initialAttendance={attendance}
       />
     </div>
   );

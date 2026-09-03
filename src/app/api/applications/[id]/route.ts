@@ -29,6 +29,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!application) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (!canChangeStatus(user, application)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
+  // Shortlisting is closed for this cycle — nobody, including Presidium, can
+  // move a new candidate into SHORTLISTED. Already-shortlisted candidates
+  // can still move forward (Interview/Selected/Rejected) as normal.
+  if (status === "SHORTLISTED" && application.status !== "SHORTLISTED") {
+    return NextResponse.json({ error: "Shortlisting is closed — no new candidates can be added." }, { status: 403 });
+  }
+
   await repo.updateApplicationStatus(id, status as ApplicationStatus);
   return NextResponse.json({ success: true });
 }

@@ -42,7 +42,10 @@ export function StatusChanger({
       </SelectTrigger>
       <SelectContent>
         {APPLICATION_STATUSES.map((s) => (
-          <SelectItem key={s} value={s}>
+          // Shortlisting is closed — nobody can move a new candidate into
+          // SHORTLISTED, but someone already shortlisted can still show
+          // (and move on from) that value.
+          <SelectItem key={s} value={s} disabled={s === "SHORTLISTED" && current !== "SHORTLISTED"}>
             {s}
           </SelectItem>
         ))}

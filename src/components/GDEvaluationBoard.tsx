@@ -20,17 +20,20 @@ export function GDEvaluationBoard({
   initialCriteria,
   initialApplications,
   initialScores,
+  initialAttendance,
 }: {
   editableSubdomains: Subdomain[];
   initialSubdomain: Subdomain;
   initialCriteria: GDCriterion[];
   initialApplications: Application[];
   initialScores: Record<string, GDCriterionScore[]>;
+  initialAttendance: Record<string, boolean>;
 }) {
   const [subdomain, setSubdomain] = useState(initialSubdomain);
   const [criteria, setCriteria] = useState(initialCriteria);
   const [applications, setApplications] = useState(initialApplications);
   const [scores, setScores] = useState(initialScores);
+  const [attendance, setAttendance] = useState(initialAttendance);
   const [drafts, setDrafts] = useState<Record<string, Record<string, number>>>({});
   const [loadingBoard, setLoadingBoard] = useState(false);
   const [savingRow, setSavingRow] = useState<string | null>(null);
@@ -55,10 +58,26 @@ export function GDEvaluationBoard({
       setEditingCriteria(data.criteria.length === 0);
       setApplications(data.applications);
       setScores(data.scores);
+      setAttendance(data.attendance);
       setDrafts({});
       setRowError({});
     } finally {
       setLoadingBoard(false);
+    }
+  }
+
+  async function toggleAttendance(applicationId: string) {
+    const next = !attendance[applicationId];
+    setAttendance((prev) => ({ ...prev, [applicationId]: next })); // optimistic
+    try {
+      const res = await fetch(`/api/applications/${applicationId}/gd-score`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attended: next }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setAttendance((prev) => ({ ...prev, [applicationId]: !next })); // revert
     }
   }
 
@@ -308,6 +327,18 @@ export function GDEvaluationBoard({
                           </div>
                         </div>
 
+                        <button
+                          type="button"
+                          onClick={() => toggleAttendance(a.applicationId)}
+                          className={`h-9 w-full border-2 text-xs font-bold uppercase tracking-wide transition-colors ${
+                            attendance[a.applicationId]
+                              ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
+                              : "border-destructive/40 bg-destructive/10 text-red-400"
+                          }`}
+                        >
+                          {attendance[a.applicationId] ? "Present" : "Absent — tap to mark present"}
+                        </button>
+
                         <div className="grid grid-cols-2 gap-2.5">
                           {criteria.map((c) => (
                             <div key={c.id} className="space-y-1">
@@ -353,6 +384,7 @@ export function GDEvaluationBoard({
                       <th className="sticky left-0 min-w-[180px] bg-surface-container-lowest px-4 py-3 font-bold">
                         Candidate
                       </th>
+                      <th className="min-w-[110px] px-3 py-3 text-center font-bold">Attendance</th>
                       {criteria.map((c) => (
                         <th key={c.id} className="min-w-[100px] px-3 py-3 text-center font-bold">
                           {c.label}
@@ -376,6 +408,19 @@ export function GDEvaluationBoard({
                               {a.name}
                             </Link>
                             <div className="truncate text-xs text-on-surface-variant">{a.regNo}</div>
+                          </td>
+                          <td className="px-3 py-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => toggleAttendance(a.applicationId)}
+                              className={`h-8 w-full border-2 text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                                attendance[a.applicationId]
+                                  ? "border-emerald-500 bg-emerald-500/15 text-emerald-400"
+                                  : "border-destructive/40 bg-destructive/10 text-red-400"
+                              }`}
+                            >
+                              {attendance[a.applicationId] ? "Present" : "Absent"}
+                            </button>
                           </td>
                           {criteria.map((c) => (
                             <td key={c.id} className="px-3 py-3 text-center">

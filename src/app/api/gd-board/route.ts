@@ -28,9 +28,12 @@ export async function GET(req: NextRequest) {
 
   const applicationIds = new Set(applications.map((a) => a.applicationId));
   const scores: Record<string, GDCriterionScore[]> = {};
+  const attendance: Record<string, boolean> = {};
   for (const s of allScores) {
-    if (applicationIds.has(s.applicationId)) scores[s.applicationId] = s.scores;
+    if (!applicationIds.has(s.applicationId)) continue;
+    scores[s.applicationId] = s.scores;
+    attendance[s.applicationId] = s.attended;
   }
 
-  return NextResponse.json({ criteria, applications, scores });
+  return NextResponse.json({ criteria, applications, scores, attendance });
 }
