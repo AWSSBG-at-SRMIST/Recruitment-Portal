@@ -34,7 +34,10 @@ export function GDEvaluationBoard({
   const [applications, setApplications] = useState(initialApplications);
   const [scores, setScores] = useState(initialScores);
   const [attendance, setAttendance] = useState(initialAttendance);
-  const [drafts, setDrafts] = useState<Record<string, Record<string, number>>>({});
+  // A draft entry of `null` means "explicitly cleared" — distinct from no
+  // entry at all, which falls through to the saved score below. Without that
+  // distinction, clearing a filled-in box had no way to stick.
+  const [drafts, setDrafts] = useState<Record<string, Record<string, number | null>>>({});
   const [loadingBoard, setLoadingBoard] = useState(false);
   const [savingRow, setSavingRow] = useState<string | null>(null);
   const [rowError, setRowError] = useState<Record<string, string>>({});
@@ -82,13 +85,18 @@ export function GDEvaluationBoard({
   }
 
   function getScore(applicationId: string, criterionId: string): number | undefined {
-    if (drafts[applicationId]?.[criterionId] !== undefined) return drafts[applicationId][criterionId];
+    const draftValue = drafts[applicationId]?.[criterionId];
+    if (draftValue !== undefined) return draftValue ?? undefined;
     return scores[applicationId]?.find((s) => s.criterionId === criterionId)?.score;
   }
 
   function setDraftScore(applicationId: string, criterionId: string, value: number) {
     const clamped = Math.max(1, Math.min(10, Math.round(value)));
     setDrafts((prev) => ({ ...prev, [applicationId]: { ...prev[applicationId], [criterionId]: clamped } }));
+  }
+
+  function clearDraftScore(applicationId: string, criterionId: string) {
+    setDrafts((prev) => ({ ...prev, [applicationId]: { ...prev[applicationId], [criterionId]: null } }));
   }
 
   function isRowDirty(applicationId: string): boolean {
@@ -349,7 +357,10 @@ export function GDEvaluationBoard({
                                 max={10}
                                 value={getScore(a.applicationId, c.id) ?? ""}
                                 onChange={(e) => {
-                                  if (e.target.value === "") return;
+                                  if (e.target.value === "") {
+                                    clearDraftScore(a.applicationId, c.id);
+                                    return;
+                                  }
                                   setDraftScore(a.applicationId, c.id, Number(e.target.value));
                                 }}
                                 placeholder="—"
@@ -430,7 +441,10 @@ export function GDEvaluationBoard({
                                 max={10}
                                 value={getScore(a.applicationId, c.id) ?? ""}
                                 onChange={(e) => {
-                                  if (e.target.value === "") return;
+                                  if (e.target.value === "") {
+                                    clearDraftScore(a.applicationId, c.id);
+                                    return;
+                                  }
                                   setDraftScore(a.applicationId, c.id, Number(e.target.value));
                                 }}
                                 placeholder="—"
