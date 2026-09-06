@@ -24,21 +24,26 @@ export default async function GDPage() {
   if (editableSubdomains.length === 0) redirect("/dashboard");
 
   const initialSubdomain = editableSubdomains[0];
-  const [criteria, applications, allScores] = await Promise.all([
+  const [criteria, subdomainApplications, allScores] = await Promise.all([
     repo.getGDCriteria(initialSubdomain),
-    // Only candidates actually moved to the Shortlisted (GD) stage — not
-    // every applicant in the subdomain.
-    repo.listApplications({ subdomain: initialSubdomain, status: "SHORTLISTED" }),
+    repo.listApplications({ subdomain: initialSubdomain }),
     repo.getAllGDScores(),
   ]);
-  const applicationIds = new Set(applications.map((a) => a.applicationId));
   const scores: Record<string, GDCriterionScore[]> = {};
   const attendance: Record<string, boolean> = {};
+  const scoredIds = new Set<string>();
   for (const s of allScores) {
-    if (!applicationIds.has(s.applicationId)) continue;
+    scoredIds.add(s.applicationId);
     scores[s.applicationId] = s.scores;
     attendance[s.applicationId] = s.attended;
   }
+  // Currently-shortlisted candidates (still to be scored) plus anyone who
+  // was already scored here even if they've since moved on (Interview,
+  // Selected, Rejected) — a status change must never make their GD marks
+  // disappear from the board that recorded them.
+  const applications = subdomainApplications.filter(
+    (a) => a.status === "SHORTLISTED" || scoredIds.has(a.applicationId)
+  );
 
   return (
     <div className="space-y-6">

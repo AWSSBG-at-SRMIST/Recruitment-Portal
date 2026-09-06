@@ -18,22 +18,26 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const [criteria, applications, allScores] = await Promise.all([
+  const [criteria, subdomainApplications, allScores] = await Promise.all([
     repo.getGDCriteria(subdomain),
-    // Only candidates actually moved to the Shortlisted (GD) stage — not
-    // every applicant in the subdomain.
-    repo.listApplications({ subdomain, status: "SHORTLISTED" }),
+    repo.listApplications({ subdomain }),
     repo.getAllGDScores(),
   ]);
 
-  const applicationIds = new Set(applications.map((a) => a.applicationId));
   const scores: Record<string, GDCriterionScore[]> = {};
   const attendance: Record<string, boolean> = {};
+  const scoredIds = new Set<string>();
   for (const s of allScores) {
-    if (!applicationIds.has(s.applicationId)) continue;
+    scoredIds.add(s.applicationId);
     scores[s.applicationId] = s.scores;
     attendance[s.applicationId] = s.attended;
   }
+  // Currently-shortlisted candidates plus anyone already scored here even if
+  // they've since moved on — a status change must never make their GD marks
+  // disappear from the board that recorded them.
+  const applications = subdomainApplications.filter(
+    (a) => a.status === "SHORTLISTED" || scoredIds.has(a.applicationId)
+  );
 
   return NextResponse.json({ criteria, applications: applications.map(toApplicationSummary), scores, attendance });
 }

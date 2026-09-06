@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StatusBadge } from "@/components/StatusBadge";
 import type { ApplicationSummary, GDCriterion, GDCriterionScore, Subdomain } from "@/types";
 
 function newCriterion(): GDCriterion {
@@ -325,7 +326,10 @@ export function GDEvaluationBoard({
                             >
                               {a.name}
                             </Link>
-                            <div className="truncate text-xs text-on-surface-variant">{a.regNo}</div>
+                            <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
+                              <span className="truncate">{a.regNo}</span>
+                              {a.status !== "SHORTLISTED" && <StatusBadge status={a.status} />}
+                            </div>
                           </div>
                           <div className="shrink-0 text-right">
                             <div className="text-lg font-bold tabular-nums text-primary">
@@ -418,7 +422,10 @@ export function GDEvaluationBoard({
                             >
                               {a.name}
                             </Link>
-                            <div className="truncate text-xs text-on-surface-variant">{a.regNo}</div>
+                            <div className="flex items-center gap-1.5 text-xs text-on-surface-variant">
+                              <span className="truncate">{a.regNo}</span>
+                              {a.status !== "SHORTLISTED" && <StatusBadge status={a.status} />}
+                            </div>
                           </td>
                           <td className="px-3 py-3 text-center">
                             <button

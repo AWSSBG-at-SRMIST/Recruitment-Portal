@@ -24,21 +24,26 @@ export default async function InterviewsPage() {
   if (editableSubdomains.length === 0) redirect("/dashboard");
 
   const initialSubdomain = editableSubdomains[0];
-  const [criteria, applications, allScores] = await Promise.all([
+  const [criteria, subdomainApplications, allScores] = await Promise.all([
     repo.getInterviewCriteria(initialSubdomain),
-    // Only candidates actually moved to the Interview stage — not every
-    // applicant in the subdomain.
-    repo.listApplications({ subdomain: initialSubdomain, status: "INTERVIEW" }),
+    repo.listApplications({ subdomain: initialSubdomain }),
     repo.getAllInterviewScores(),
   ]);
-  const applicationIds = new Set(applications.map((a) => a.applicationId));
   const scores: Record<string, InterviewCriterionScore[]> = {};
   const attendance: Record<string, boolean> = {};
+  const scoredIds = new Set<string>();
   for (const s of allScores) {
-    if (!applicationIds.has(s.applicationId)) continue;
+    scoredIds.add(s.applicationId);
     scores[s.applicationId] = s.scores;
     attendance[s.applicationId] = s.attended;
   }
+  // Currently-in-Interview candidates (still to be scored) plus anyone who
+  // was already scored here even if they've since moved on (Selected,
+  // Rejected) — a status change must never make their Interview marks
+  // disappear from the board that recorded them.
+  const applications = subdomainApplications.filter(
+    (a) => a.status === "INTERVIEW" || scoredIds.has(a.applicationId)
+  );
 
   return (
     <div className="space-y-6">
