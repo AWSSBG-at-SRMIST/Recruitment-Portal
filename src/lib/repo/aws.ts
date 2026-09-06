@@ -77,10 +77,32 @@ async function scanAll<T>(tableName: string): Promise<T[]> {
   return items;
 }
 
+// Dashboard, Applications, GD, and Interviews all independently full-scan
+// the same couple of tables on every navigation. On a warm Vercel instance
+// (Fluid Compute reuses instances across requests) that's the same data
+// re-read from DynamoDB seconds apart. A short in-memory cache — cleared
+// immediately on any write — cuts that down to one real scan per burst of
+// navigation without ever serving data stale by more than a few seconds.
+const SCAN_CACHE_TTL_MS = 4000;
+const scanCache = new Map<string, { data: unknown[]; expiresAt: number }>();
+
+async function scanAllCached<T>(tableName: string): Promise<T[]> {
+  const cached = scanCache.get(tableName);
+  if (cached && cached.expiresAt > Date.now()) return cached.data as T[];
+  const items = await scanAll<T>(tableName);
+  scanCache.set(tableName, { data: items, expiresAt: Date.now() + SCAN_CACHE_TTL_MS });
+  return items;
+}
+
+function invalidateScanCache(tableName: string) {
+  scanCache.delete(tableName);
+}
+
 export const awsRepo: Repo = {
   async createApplication(app: NewApplication): Promise<Application> {
     const item = { ...app, status: "APPLIED", aiScore: null, aiEvaluation: null, verifiedSignals: null };
     await db.send(new PutCommand({ TableName: TABLE.APPLICATIONS, Item: item }));
+    invalidateScanCache(TABLE.APPLICATIONS);
     return item as Application;
   },
 
@@ -119,7 +141,7 @@ export const awsRepo: Repo = {
   },
 
   async listApplications(filter: ApplicationFilter = {}) {
-    let items = await scanAll<Application>(TABLE.APPLICATIONS);
+    let items = await scanAllCached<Application>(TABLE.APPLICATIONS);
     if (filter.domain) items = items.filter((i) => i.domain === filter.domain);
     if (filter.subdomain) items = items.filter((i) => i.subdomain === filter.subdomain);
     if (filter.status) items = items.filter((i) => i.status === filter.status);
@@ -137,6 +159,7 @@ export const awsRepo: Repo = {
         ExpressionAttributeValues: { ":status": status },
       })
     );
+    invalidateScanCache(TABLE.APPLICATIONS);
   },
 
   async updateApplicationEvaluation(applicationId, result) {
@@ -152,10 +175,12 @@ export const awsRepo: Repo = {
         },
       })
     );
+    invalidateScanCache(TABLE.APPLICATIONS);
   },
 
   async deleteApplication(applicationId, resumeFileRef) {
     await db.send(new DeleteCommand({ TableName: TABLE.APPLICATIONS, Key: { applicationId } }));
+    invalidateScanCache(TABLE.APPLICATIONS);
     if (!resumeFileRef) return;
     try {
       await s3.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: resumeFileRef }));
@@ -328,6 +353,7 @@ export const awsRepo: Repo = {
         ReturnValues: "ALL_NEW",
       })
     );
+    invalidateScanCache(TABLE.INTERVIEW_SCORES);
     return {
       applicationId,
       scores,
@@ -348,6 +374,7 @@ export const awsRepo: Repo = {
         ReturnValues: "ALL_NEW",
       })
     );
+    invalidateScanCache(TABLE.INTERVIEW_SCORES);
     return {
       applicationId,
       scores: (result.Attributes?.scores as InterviewCriterionScore[]) ?? [],
@@ -358,7 +385,7 @@ export const awsRepo: Repo = {
   },
 
   async getAllInterviewScores(): Promise<InterviewScore[]> {
-    const items = await scanAll<Record<string, unknown>>(TABLE.INTERVIEW_SCORES);
+    const items = await scanAllCached<Record<string, unknown>>(TABLE.INTERVIEW_SCORES);
     return items.map((item) => ({
       applicationId: item.applicationId as string,
       scores: (item.scores as InterviewCriterionScore[]) ?? [],
@@ -407,6 +434,7 @@ export const awsRepo: Repo = {
         ReturnValues: "ALL_NEW",
       })
     );
+    invalidateScanCache(TABLE.GD_SCORES);
     return {
       applicationId,
       scores,
@@ -427,6 +455,7 @@ export const awsRepo: Repo = {
         ReturnValues: "ALL_NEW",
       })
     );
+    invalidateScanCache(TABLE.GD_SCORES);
     return {
       applicationId,
       scores: (result.Attributes?.scores as GDCriterionScore[]) ?? [],
@@ -437,7 +466,7 @@ export const awsRepo: Repo = {
   },
 
   async getAllGDScores(): Promise<GDScore[]> {
-    const items = await scanAll<Record<string, unknown>>(TABLE.GD_SCORES);
+    const items = await scanAllCached<Record<string, unknown>>(TABLE.GD_SCORES);
     return items.map((item) => ({
       applicationId: item.applicationId as string,
       scores: (item.scores as GDCriterionScore[]) ?? [],
