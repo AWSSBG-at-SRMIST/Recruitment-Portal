@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { repo } from "@/lib/repo";
 import { isPresidium, canEditGDCriteria } from "@/lib/permissions";
-import { DOMAIN_SUBDOMAINS, type Subdomain, type GDCriterionScore } from "@/types";
+import { DOMAIN_SUBDOMAINS, toApplicationSummary, type Subdomain, type GDCriterionScore } from "@/types";
 import { GDEvaluationBoard } from "@/components/GDEvaluationBoard";
 
 export const metadata: Metadata = { title: "Group Discussion" };
@@ -53,7 +53,7 @@ export default async function GDPage() {
         editableSubdomains={editableSubdomains}
         initialSubdomain={initialSubdomain}
         initialCriteria={criteria}
-        initialApplications={applications}
+        initialApplications={applications.map(toApplicationSummary)}
         initialScores={scores}
         initialAttendance={attendance}
       />

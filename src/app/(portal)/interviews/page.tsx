@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { repo } from "@/lib/repo";
 import { isPresidium, canEditInterviewCriteria } from "@/lib/permissions";
-import { DOMAIN_SUBDOMAINS, type Subdomain, type InterviewCriterionScore } from "@/types";
+import { DOMAIN_SUBDOMAINS, toApplicationSummary, type Subdomain, type InterviewCriterionScore } from "@/types";
 import { InterviewEvaluationBoard } from "@/components/InterviewEvaluationBoard";
 
 export const metadata: Metadata = { title: "Interviews" };
@@ -53,7 +53,7 @@ export default async function InterviewsPage() {
         editableSubdomains={editableSubdomains}
         initialSubdomain={initialSubdomain}
         initialCriteria={criteria}
-        initialApplications={applications}
+        initialApplications={applications.map(toApplicationSummary)}
         initialScores={scores}
         initialAttendance={attendance}
       />

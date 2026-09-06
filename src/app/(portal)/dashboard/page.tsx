@@ -44,7 +44,13 @@ export default async function DashboardPage() {
       </div>
 
       {/* Funnel */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="p-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-primary">Total Applied</p>
+            <p className="mt-1 text-3xl font-bold tabular-nums text-on-surface">{total}</p>
+          </CardContent>
+        </Card>
         {APPLICATION_STATUSES.map((status) => (
           <Card key={status}>
             <CardContent className="p-5">

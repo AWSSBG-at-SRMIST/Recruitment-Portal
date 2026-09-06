@@ -9,7 +9,13 @@ import { StatusBadge, ScorePill } from "@/components/StatusBadge";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { Application, Domain, Subdomain } from "@/types";
+import { DOMAIN_SUBDOMAINS, type ApplicationSummary, type Domain, type Subdomain } from "@/types";
+
+function domainForSubdomain(subdomain: string): Domain | undefined {
+  return (Object.keys(DOMAIN_SUBDOMAINS) as Domain[]).find((d) =>
+    DOMAIN_SUBDOMAINS[d].includes(subdomain as Subdomain)
+  );
+}
 
 const PAGE_SIZE = 20;
 // Session-only, not a URL param — a filter change must stay a pure in-memory
@@ -27,7 +33,7 @@ const DEFAULT_FILTERS: ApplicationsFilterValue = {
 };
 
 // Always AI score high→low, nulls last — no user-facing sort control.
-function sortApplications(apps: Application[]): Application[] {
+function sortApplications(apps: ApplicationSummary[]): ApplicationSummary[] {
   return [...apps].sort((a, b) => (b.aiScore ?? -1) - (a.aiScore ?? -1));
 }
 
@@ -36,7 +42,7 @@ export function ApplicationsTable({
   scopeDomain,
   scopeSubdomain,
 }: {
-  applications: Application[];
+  applications: ApplicationSummary[];
   scopeDomain: Domain | null;
   scopeSubdomain: Subdomain | null;
 }) {
@@ -53,8 +59,13 @@ export function ApplicationsTable({
   useEffect(() => {
     const urlSubdomain = searchParams.get("subdomain");
     if (urlSubdomain) {
+      // The subdomain filter's own <select> is disabled/empty until a domain
+      // is also chosen (its options list is derived from the domain) — a
+      // deep link that sets only subdomain left it looking unfiltered even
+      // though the underlying row filter did apply. Derive the domain too.
+      const domain = domainForSubdomain(urlSubdomain);
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setFilters((prev) => ({ ...prev, subdomain: urlSubdomain }));
+      setFilters((prev) => ({ ...prev, subdomain: urlSubdomain, domain: domain ?? prev.domain }));
       return;
     }
     try {

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { repo } from "@/lib/repo";
 import { getCurrentUser } from "@/lib/auth";
 import { getVisibilityScope } from "@/lib/permissions";
+import { toApplicationSummary } from "@/types";
 import { ApplicationsTable } from "@/components/ApplicationsTable";
 
 export const metadata: Metadata = { title: "Applications" };
@@ -24,5 +25,6 @@ export default async function ApplicationsPage() {
     subdomain: scope.subdomain ?? undefined,
   });
 
-  return <ApplicationsTable applications={applications} scopeDomain={scope.domain} scopeSubdomain={scope.subdomain} />;
+  const summaries = applications.map(toApplicationSummary);
+  return <ApplicationsTable applications={summaries} scopeDomain={scope.domain} scopeSubdomain={scope.subdomain} />;
 }

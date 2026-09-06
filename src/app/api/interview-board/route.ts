@@ -3,7 +3,7 @@ import { repo } from "@/lib/repo";
 import { getCurrentUser } from "@/lib/auth";
 import { canEditInterviewCriteria } from "@/lib/permissions";
 import { isRealSubdomain } from "@/lib/validation";
-import type { InterviewCriterionScore } from "@/types";
+import { toApplicationSummary, type InterviewCriterionScore } from "@/types";
 
 // Everything the interview evaluation board needs for one subdomain in a
 // single round trip: the configured criteria, every candidate in that
@@ -35,5 +35,5 @@ export async function GET(req: NextRequest) {
     attendance[s.applicationId] = s.attended;
   }
 
-  return NextResponse.json({ criteria, applications, scores, attendance });
+  return NextResponse.json({ criteria, applications: applications.map(toApplicationSummary), scores, attendance });
 }

@@ -117,6 +117,38 @@ export interface Application {
   appliedAt: number;
 }
 
+// A trimmed view of Application for list/board client components — those
+// only ever render a handful of identity/classification fields, but a
+// Server Component passing full Application objects as props serializes
+// every field (including the full aiEvaluation and questionnaire text) into
+// the RSC payload sent to the browser. At a few hundred applications that's
+// a real amount of unused data shipped on every navigation.
+export interface ApplicationSummary {
+  applicationId: string;
+  name: string;
+  regNo: string;
+  domain: Domain;
+  subdomain: Subdomain;
+  year: string;
+  gender: string;
+  status: ApplicationStatus;
+  aiScore: number | null;
+}
+
+export function toApplicationSummary(app: Application): ApplicationSummary {
+  return {
+    applicationId: app.applicationId,
+    name: app.name,
+    regNo: app.regNo,
+    domain: app.domain,
+    subdomain: app.subdomain,
+    year: app.year,
+    gender: app.gender,
+    status: app.status,
+    aiScore: app.aiScore,
+  };
+}
+
 // Interview evaluation criteria — a Manager/Associate sets these up once per
 // subdomain (e.g. "Communication", "Problem Solving"), and every candidate
 // in that subdomain is rated 1-10 against the same fixed set. Distinct from

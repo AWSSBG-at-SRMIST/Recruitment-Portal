@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Application, InterviewCriterion, InterviewCriterionScore, Subdomain } from "@/types";
+import type { ApplicationSummary, InterviewCriterion, InterviewCriterionScore, Subdomain } from "@/types";
 
 function newCriterion(): InterviewCriterion {
   return { id: crypto.randomUUID(), label: "" };
@@ -25,7 +25,7 @@ export function InterviewEvaluationBoard({
   editableSubdomains: Subdomain[];
   initialSubdomain: Subdomain;
   initialCriteria: InterviewCriterion[];
-  initialApplications: Application[];
+  initialApplications: ApplicationSummary[];
   initialScores: Record<string, InterviewCriterionScore[]>;
   initialAttendance: Record<string, boolean>;
 }) {

@@ -3,7 +3,7 @@ import { repo } from "@/lib/repo";
 import { getCurrentUser } from "@/lib/auth";
 import { canEditGDCriteria } from "@/lib/permissions";
 import { isRealSubdomain } from "@/lib/validation";
-import type { GDCriterionScore } from "@/types";
+import { toApplicationSummary, type GDCriterionScore } from "@/types";
 
 // Everything the GD evaluation board needs for one subdomain in a single
 // round trip: the configured criteria, every candidate in that subdomain,
@@ -35,5 +35,5 @@ export async function GET(req: NextRequest) {
     attendance[s.applicationId] = s.attended;
   }
 
-  return NextResponse.json({ criteria, applications, scores, attendance });
+  return NextResponse.json({ criteria, applications: applications.map(toApplicationSummary), scores, attendance });
 }

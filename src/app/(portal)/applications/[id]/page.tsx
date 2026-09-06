@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { QuestionDef } from "@/types";
+import type { QuestionDef, GDCriterion, GDCriterionScore, InterviewCriterion, InterviewCriterionScore } from "@/types";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ExternalLink, GitBranch, Code2, Sparkles, Star, Award } from "lucide-react";
@@ -39,7 +39,13 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
   if (!app) notFound();
   if (!canViewApplication(user, app)) notFound();
 
-  const questions = await repo.getSubdomainQuestions(app.subdomain);
+  const [questions, gdCriteria, gdScore, interviewCriteria, interviewScore] = await Promise.all([
+    repo.getSubdomainQuestions(app.subdomain),
+    repo.getGDCriteria(app.subdomain),
+    repo.getGDScore(id),
+    repo.getInterviewCriteria(app.subdomain),
+    repo.getInterviewScore(id),
+  ]);
   const canEditStatus = canChangeStatus(user, app);
   const signals = app.verifiedSignals;
   const evaluation = app.aiEvaluation;
@@ -391,6 +397,20 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         </Card>
       )}
 
+      {/* GD / Interview evaluation history — kept visible here regardless of
+          current status, since the GD and Interview boards only ever show
+          candidates who are CURRENTLY in that stage. Without this, a
+          candidate's scores effectively vanished the moment they moved on
+          (or got rejected), even though the data was never actually lost. */}
+      {(gdScore || interviewScore) && (
+        <div className="grid gap-6 md:grid-cols-2">
+          {gdScore && <EvaluationRoundCard title="Group Discussion" criteria={gdCriteria} score={gdScore} />}
+          {interviewScore && (
+            <EvaluationRoundCard title="Interview" criteria={interviewCriteria} score={interviewScore} />
+          )}
+        </div>
+      )}
+
       {/* Questionnaire */}
       <Card>
         <CardHeader>
@@ -463,6 +483,57 @@ function AnswerText({ type, value }: { type: QuestionDef["type"]; value: string 
         )
       )}
     </div>
+  );
+}
+
+function EvaluationRoundCard({
+  title,
+  criteria,
+  score,
+}: {
+  title: string;
+  criteria: (GDCriterion | InterviewCriterion)[];
+  score: { scores: (GDCriterionScore | InterviewCriterionScore)[]; attended: boolean; updatedBy: string; updatedAt: number };
+}) {
+  const scoreByCriterion = new Map(score.scores.map((s) => [s.criterionId, s.score]));
+  const total = score.scores.reduce((sum, s) => sum + s.score, 0);
+  const percentage = score.scores.length > 0 ? Math.round((total / (score.scores.length * 10)) * 100) : null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between text-base">
+          <span>{title}</span>
+          <Badge variant={score.attended ? "success" : "destructive"}>
+            {score.attended ? "Present" : "Absent"}
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {percentage !== null && (
+          <div className="flex items-center justify-between border-b border-on-surface/10 pb-3">
+            <span className="text-sm text-on-surface-variant">Overall</span>
+            <span className="text-2xl font-bold tabular-nums text-primary">{percentage}%</span>
+          </div>
+        )}
+        {score.scores.length === 0 ? (
+          <p className="text-sm text-on-surface-variant">No scores recorded.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {criteria.map((c) => {
+              const value = scoreByCriterion.get(c.id);
+              if (value === undefined) return null;
+              return (
+                <li key={c.id} className="flex items-center justify-between gap-3">
+                  <span className="min-w-0 truncate text-on-surface-variant">{c.label}</span>
+                  <span className="shrink-0 font-bold tabular-nums text-on-surface">{value}/10</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

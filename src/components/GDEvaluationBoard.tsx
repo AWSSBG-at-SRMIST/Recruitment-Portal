@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { Application, GDCriterion, GDCriterionScore, Subdomain } from "@/types";
+import type { ApplicationSummary, GDCriterion, GDCriterionScore, Subdomain } from "@/types";
 
 function newCriterion(): GDCriterion {
   return { id: crypto.randomUUID(), label: "" };
@@ -25,7 +25,7 @@ export function GDEvaluationBoard({
   editableSubdomains: Subdomain[];
   initialSubdomain: Subdomain;
   initialCriteria: GDCriterion[];
-  initialApplications: Application[];
+  initialApplications: ApplicationSummary[];
   initialScores: Record<string, GDCriterionScore[]>;
   initialAttendance: Record<string, boolean>;
 }) {
