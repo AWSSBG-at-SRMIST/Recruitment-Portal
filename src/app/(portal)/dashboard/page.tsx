@@ -11,7 +11,7 @@ import {
   GENDER_RATIO_TOLERANCE,
 } from "@/lib/recruitmentTargets";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ALL_DOMAINS, APPLICATION_STATUSES, DOMAIN_SUBDOMAINS, type Application, type Domain, type Subdomain } from "@/types";
+import { ALL_DOMAINS, DOMAIN_SUBDOMAINS, type Application, type Domain, type Subdomain } from "@/types";
 
 export const metadata: Metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
@@ -21,16 +21,41 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   const scope = getVisibilityScope(user);
 
-  const applications = await repo.listApplications({
-    domain: scope.domain || undefined,
-    subdomain: scope.subdomain || undefined,
-  });
+  const [applications, allGDScores, allInterviewScores] = await Promise.all([
+    repo.listApplications({
+      domain: scope.domain || undefined,
+      subdomain: scope.subdomain || undefined,
+    }),
+    repo.getAllGDScores(),
+    repo.getAllInterviewScores(),
+  ]);
   const visibleDomains = scope.domain ? [scope.domain] : ALL_DOMAINS;
 
   const total = applications.length;
-  const byStatus = Object.fromEntries(
-    APPLICATION_STATUSES.map((s) => [s, applications.filter((a) => a.status === s).length])
-  );
+
+  // SHORTLISTED/INTERVIEW are waypoints, not destinations — once someone
+  // moves on (or gets rejected), their current `status` no longer says they
+  // were ever there, so a raw "current status === X" count silently drops
+  // toward zero as the funnel progresses. A candidate proves they reached a
+  // stage either by currently sitting at/past it, or by having a score
+  // record from it (scored-then-rejected still counts as "was shortlisted").
+  const gdScoredIds = new Set(allGDScores.map((s) => s.applicationId));
+  const interviewScoredIds = new Set(allInterviewScores.map((s) => s.applicationId));
+  const everShortlisted = applications.filter(
+    (a) =>
+      a.status === "SHORTLISTED" ||
+      a.status === "INTERVIEW" ||
+      a.status === "SELECTED" ||
+      (a.status === "REJECTED" && gdScoredIds.has(a.applicationId))
+  ).length;
+  const everInterviewed = applications.filter(
+    (a) =>
+      a.status === "INTERVIEW" ||
+      a.status === "SELECTED" ||
+      (a.status === "REJECTED" && interviewScoredIds.has(a.applicationId))
+  ).length;
+  const selected = applications.filter((a) => a.status === "SELECTED").length;
+  const rejected = applications.filter((a) => a.status === "REJECTED").length;
 
   return (
     <div className="space-y-8">
@@ -43,22 +68,40 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Funnel */}
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+      {/* Funnel — cumulative "reached this stage" counts, not a snapshot of
+          who's currently sitting there. See the everShortlisted/everInterviewed
+          computation above for why that distinction matters. */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
         <Card className="border-primary/40 bg-primary/5">
           <CardContent className="p-5">
             <p className="text-xs font-bold uppercase tracking-wide text-primary">Total Applied</p>
             <p className="mt-1 text-3xl font-bold tabular-nums text-on-surface">{total}</p>
           </CardContent>
         </Card>
-        {APPLICATION_STATUSES.map((status) => (
-          <Card key={status}>
-            <CardContent className="p-5">
-              <p className="text-xs font-bold uppercase tracking-wide text-primary">{status}</p>
-              <p className="mt-1 text-3xl font-bold tabular-nums text-on-surface">{byStatus[status]}</p>
-            </CardContent>
-          </Card>
-        ))}
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-primary">Shortlisted</p>
+            <p className="mt-1 text-3xl font-bold tabular-nums text-on-surface">{everShortlisted}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-primary">Interview</p>
+            <p className="mt-1 text-3xl font-bold tabular-nums text-on-surface">{everInterviewed}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-primary">Selected</p>
+            <p className="mt-1 text-3xl font-bold tabular-nums text-on-surface">{selected}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs font-bold uppercase tracking-wide text-primary">Rejected</p>
+            <p className="mt-1 text-3xl font-bold tabular-nums text-on-surface">{rejected}</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Per-domain breakdown */}
@@ -96,7 +139,13 @@ export default async function DashboardPage() {
         })}
       </div>
 
-      <RecruitmentTargets applications={applications} visibleDomains={visibleDomains} scopedSubdomain={scope.subdomain} />
+      <RecruitmentTargets
+        applications={applications}
+        gdScoredIds={gdScoredIds}
+        interviewScoredIds={interviewScoredIds}
+        visibleDomains={visibleDomains}
+        scopedSubdomain={scope.subdomain}
+      />
 
       <TopCandidates applications={applications} />
     </div>
@@ -105,10 +154,14 @@ export default async function DashboardPage() {
 
 function RecruitmentTargets({
   applications,
+  gdScoredIds,
+  interviewScoredIds,
   visibleDomains,
   scopedSubdomain,
 }: {
   applications: Application[];
+  gdScoredIds: Set<string>;
+  interviewScoredIds: Set<string>;
   visibleDomains: Domain[];
   scopedSubdomain: Subdomain | null;
 }) {
@@ -120,8 +173,21 @@ function RecruitmentTargets({
       const target = RECRUITMENT_TARGETS[subdomain];
 
       const subApps = applications.filter((a) => a.subdomain === subdomain);
-      const shortlisted = subApps.filter((a) => a.status === "SHORTLISTED").length;
-      const interview = subApps.filter((a) => a.status === "INTERVIEW").length;
+      // Same "ever reached this stage" logic as the top funnel — a raw
+      // current-status count silently drops as candidates move on.
+      const shortlisted = subApps.filter(
+        (a) =>
+          a.status === "SHORTLISTED" ||
+          a.status === "INTERVIEW" ||
+          a.status === "SELECTED" ||
+          (a.status === "REJECTED" && gdScoredIds.has(a.applicationId))
+      ).length;
+      const interview = subApps.filter(
+        (a) =>
+          a.status === "INTERVIEW" ||
+          a.status === "SELECTED" ||
+          (a.status === "REJECTED" && interviewScoredIds.has(a.applicationId))
+      ).length;
       const selectedApps = subApps.filter((a) => a.status === "SELECTED");
       const male = selectedApps.filter((a) => a.gender === "Male").length;
       const female = selectedApps.filter((a) => a.gender === "Female").length;

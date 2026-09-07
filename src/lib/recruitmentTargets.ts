@@ -3,15 +3,15 @@ import type { Subdomain } from "@/types";
 // Fixed recruitment policy for this cycle — how many seats each subdomain is
 // recruiting for. Change here, not per-page, if the numbers ever move.
 export const RECRUITMENT_TARGETS: Record<Subdomain, number> = {
-  "Software Development": 5,
-  "AI & Machine Learning": 5,
-  "Cloud & DevOps": 5,
-  "Events & Operations": 9,
+  "Software Development": 6,
+  "AI & Machine Learning": 6,
+  "Cloud & DevOps": 6,
+  "Events & Operations": 8,
   "Sponsorship & Finance": 7,
   "HR & Admin": 7,
-  "PR & Marketing": 9,
+  "PR & Marketing": 8,
   "Digital Design": 5,
-  "Media Production": 5,
+  "Media Production": 4,
 };
 
 // Shortlist (GD) 3x the seats, Interview 2x, then pick the best `target` at
