@@ -37,12 +37,11 @@ export default async function InterviewsPage() {
     scores[s.applicationId] = s.scores;
     attendance[s.applicationId] = s.attended;
   }
-  // Currently-in-Interview candidates (still to be scored) plus anyone who
-  // was already scored here even if they've since moved on (Selected,
-  // Rejected) — a status change must never make their Interview marks
-  // disappear from the board that recorded them.
+  // Currently-in-Interview candidates, anyone already scored here even after
+  // moving on, plus every SELECTED candidate — including ones hand-added
+  // straight to SELECTED who never actually sat an interview.
   const applications = subdomainApplications.filter(
-    (a) => a.status === "INTERVIEW" || scoredIds.has(a.applicationId)
+    (a) => a.status === "INTERVIEW" || a.status === "SELECTED" || scoredIds.has(a.applicationId)
   );
 
   return (

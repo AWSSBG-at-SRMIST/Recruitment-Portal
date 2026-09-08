@@ -37,12 +37,12 @@ export default async function GDPage() {
     scores[s.applicationId] = s.scores;
     attendance[s.applicationId] = s.attended;
   }
-  // Currently-shortlisted candidates (still to be scored) plus anyone who
-  // was already scored here even if they've since moved on (Interview,
-  // Selected, Rejected) — a status change must never make their GD marks
-  // disappear from the board that recorded them.
+  // Currently-shortlisted candidates (still to be scored), plus anyone
+  // already scored here even after moving on, plus every SELECTED candidate
+  // — including ones hand-added straight to SELECTED who never actually sat
+  // a GD round. Presidium/managers still want to see and score them here.
   const applications = subdomainApplications.filter(
-    (a) => a.status === "SHORTLISTED" || scoredIds.has(a.applicationId)
+    (a) => a.status === "SHORTLISTED" || a.status === "SELECTED" || scoredIds.has(a.applicationId)
   );
 
   return (

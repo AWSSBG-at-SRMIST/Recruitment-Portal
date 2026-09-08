@@ -32,11 +32,11 @@ export async function GET(req: NextRequest) {
     scores[s.applicationId] = s.scores;
     attendance[s.applicationId] = s.attended;
   }
-  // Currently-shortlisted candidates plus anyone already scored here even if
-  // they've since moved on — a status change must never make their GD marks
-  // disappear from the board that recorded them.
+  // Currently-shortlisted candidates, anyone already scored here even after
+  // moving on, plus every SELECTED candidate — including ones hand-added
+  // straight to SELECTED who never actually sat a GD round.
   const applications = subdomainApplications.filter(
-    (a) => a.status === "SHORTLISTED" || scoredIds.has(a.applicationId)
+    (a) => a.status === "SHORTLISTED" || a.status === "SELECTED" || scoredIds.has(a.applicationId)
   );
 
   return NextResponse.json({ criteria, applications: applications.map(toApplicationSummary), scores, attendance });
